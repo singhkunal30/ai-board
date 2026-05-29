@@ -17,6 +17,7 @@ export interface BoardSync {
   addObject: (obj: BoardObjectBase) => void;
   /** Append many objects/edges at once (used by AI generation results). */
   addFragment: (objects: BoardObjectBase[], edges: BoardEdge[]) => void;
+  addEdge: (edge: BoardEdge) => void;
   updateObjectPosition: (id: string, position: { x: number; y: number }) => void;
   updateObjectData: (id: string, data: Record<string, unknown>) => void;
   removeObjects: (ids: string[]) => void;
@@ -123,6 +124,11 @@ export function useBoardSync(boardId: string): BoardSync {
     [tx],
   );
 
+  const addEdge = useCallback(
+    (edge: BoardEdge) => tx(() => maps.current?.edges.set(edge.id, edge)),
+    [tx],
+  );
+
   const updateObjectPosition = useCallback(
     (id: string, position: { x: number; y: number }) =>
       tx(() => {
@@ -173,6 +179,7 @@ export function useBoardSync(boardId: string): BoardSync {
       presence,
       addObject,
       addFragment,
+      addEdge,
       updateObjectPosition,
       updateObjectData,
       removeObjects,
@@ -185,6 +192,7 @@ export function useBoardSync(boardId: string): BoardSync {
       presence,
       addObject,
       addFragment,
+      addEdge,
       updateObjectPosition,
       updateObjectData,
       removeObjects,

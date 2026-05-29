@@ -9,6 +9,8 @@ import {
   ReactFlowProvider,
   applyNodeChanges,
   useReactFlow,
+  ViewportPortal,
+  type Connection,
   type Edge,
   type Node,
   type NodeChange,
@@ -34,6 +36,33 @@ function newObject(type: BoardObjectType, x: number, y: number): BoardObjectBase
     data: { text: '' },
     style: isSticky ? { background: '#fef08a' } : undefined,
   };
+}
+
+/** Renders collaborators' live cursors in flow coordinates. */
+function RemoteCursors({ sync }: { sync: ReturnType<typeof useBoardSync> }) {
+  return (
+    <ViewportPortal>
+      {sync.presence
+        .filter((p) => p.cursor)
+        .map((p) => (
+          <div
+            key={p.userId}
+            className="pointer-events-none absolute z-50"
+            style={{ transform: `translate(${p.cursor!.x}px, ${p.cursor!.y}px)` }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill={p.color}>
+              <path d="M3 3l7.5 18 2.5-7 7-2.5L3 3z" />
+            </svg>
+            <span
+              className="ml-3 rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
+              style={{ background: p.color }}
+            >
+              {p.name}
+            </span>
+          </div>
+        ))}
+    </ViewportPortal>
+  );
 }
 
 function CanvasInner({ boardId }: { boardId: string }) {
@@ -99,6 +128,15 @@ function CanvasInner({ boardId }: { boardId: string }) {
     [sync],
   );
 
+  const onConnect = useCallback(
+    (c: Connection) => {
+      if (c.source && c.target) {
+        sync.addEdge({ id: crypto.randomUUID(), source: c.source, target: c.target });
+      }
+    },
+    [sync],
+  );
+
   const addAt = useCallback(
     (type: BoardObjectType) => {
       const center = screenToFlowPosition({
@@ -149,6 +187,7 @@ function CanvasInner({ boardId }: { boardId: string }) {
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onNodeDragStop={(_, node) => sync.updateObjectPosition(node.id, node.position)}
+        onConnect={onConnect}
         onPaneMouseMove={(e) =>
           sync.setCursor(screenToFlowPosition({ x: e.clientX, y: e.clientY }))
         }
@@ -158,6 +197,7 @@ function CanvasInner({ boardId }: { boardId: string }) {
         <Background />
         <Controls />
         <MiniMap pannable zoomable />
+        <RemoteCursors sync={sync} />
       </ReactFlow>
 
       <AiPanel boardId={boardId} onFragment={(o, e) => sync.addFragment(o, e)} />

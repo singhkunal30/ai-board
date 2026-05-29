@@ -14,8 +14,21 @@ interface Task {
   priority: string;
   suggestedOwner?: string;
 }
+interface AgentResult {
+  kind: string;
+  text?: string;
+  fragment?: Fragment;
+  data?: unknown;
+}
 
-type Tab = 'generate' | 'analyze' | 'chat';
+type Tab = 'create' | 'agents' | 'analyze' | 'chat';
+
+const AGENTS: { kind: string; label: string }[] = [
+  { kind: 'product_manager', label: 'Product Manager' },
+  { kind: 'architect', label: 'Architect' },
+  { kind: 'scrum', label: 'Scrum Master' },
+  { kind: 'research', label: 'Research' },
+];
 
 export function AiPanel({
   boardId,
@@ -25,11 +38,14 @@ export function AiPanel({
   onFragment: (objects: BoardObjectBase[], edges: BoardEdge[]) => void;
 }) {
   const [open, setOpen] = useState(true);
-  const [tab, setTab] = useState<Tab>('generate');
+  const [tab, setTab] = useState<Tab>('create');
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [prompt, setPrompt] = useState('');
+  const [agentPrompt, setAgentPrompt] = useState('');
+  const [agentText, setAgentText] = useState<string | null>(null);
+  const [meetingNotes, setMeetingNotes] = useState('');
   const [summary, setSummary] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [chatInput, setChatInput] = useState('');
@@ -48,13 +64,15 @@ export function AiPanel({
     }
   }
 
+  const place = (f?: Fragment) => f && onFragment(f.objects, f.edges);
+
   async function generate(kind: 'mindmap' | 'diagram') {
     if (!prompt.trim()) return;
     const frag = await run(kind, () =>
       api<Fragment>(`/boards/${boardId}/ai/${kind}`, { method: 'POST', body: { prompt } }),
     );
     if (frag) {
-      onFragment(frag.objects, frag.edges);
+      place(frag);
       setPrompt('');
     }
   }
@@ -63,7 +81,43 @@ export function AiPanel({
     const res = await run('cluster', () =>
       api<{ fragment: Fragment }>(`/boards/${boardId}/ai/cluster`, { method: 'POST' }),
     );
-    if (res) onFragment(res.fragment.objects, res.fragment.edges);
+    if (res) place(res.fragment);
+  }
+
+  async function knowledgeGraph() {
+    const res = await run('kg', () =>
+      api<Fragment>(`/boards/${boardId}/ai/knowledge-graph`, { method: 'POST' }),
+    );
+    if (res) place(res);
+  }
+
+  async function runAgent(kind: string) {
+    if (!agentPrompt.trim() && kind !== 'research') return;
+    setAgentText(null);
+    const res = await run(kind, () =>
+      api<AgentResult>(`/boards/${boardId}/ai/agents/${kind}`, {
+        method: 'POST',
+        body: { prompt: agentPrompt || 'Review this board' },
+      }),
+    );
+    if (res) {
+      place(res.fragment);
+      if (res.text) setAgentText(res.text);
+    }
+  }
+
+  async function processMeeting() {
+    if (meetingNotes.trim().length < 10) return;
+    const res = await run('meeting', () =>
+      api<{ fragment: Fragment }>(`/boards/${boardId}/ai/meeting`, {
+        method: 'POST',
+        body: { notes: meetingNotes },
+      }),
+    );
+    if (res) {
+      place(res.fragment);
+      setMeetingNotes('');
+    }
   }
 
   async function summarize() {
@@ -89,10 +143,7 @@ export function AiPanel({
 
   if (!open) {
     return (
-      <Button
-        className="absolute bottom-4 right-4 z-10 rounded-full shadow-lg"
-        onClick={() => setOpen(true)}
-      >
+      <Button className="absolute bottom-4 right-4 z-10 rounded-full shadow-lg" onClick={() => setOpen(true)}>
         ✨ AI
       </Button>
     );
@@ -107,8 +158,8 @@ export function AiPanel({
         </button>
       </div>
 
-      <div className="flex border-b border-slate-200 text-sm dark:border-slate-800">
-        {(['generate', 'analyze', 'chat'] as Tab[]).map((t) => (
+      <div className="flex border-b border-slate-200 text-xs dark:border-slate-800">
+        {(['create', 'agents', 'analyze', 'chat'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -124,7 +175,7 @@ export function AiPanel({
       <div className="flex-1 space-y-3 overflow-y-auto p-3 text-sm">
         {error && <p className="rounded bg-red-50 p-2 text-red-600 dark:bg-red-950">{error}</p>}
 
-        {tab === 'generate' && (
+        {tab === 'create' && (
           <>
             <Input
               placeholder="Describe what to create…"
@@ -138,13 +189,52 @@ export function AiPanel({
               <Button onClick={() => generate('diagram')} disabled={!!busy}>
                 {busy === 'diagram' ? <Spinner /> : 'Diagram'}
               </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
               <Button variant="ghost" onClick={cluster} disabled={!!busy}>
                 {busy === 'cluster' ? <Spinner /> : 'Cluster notes'}
               </Button>
+              <Button variant="ghost" onClick={knowledgeGraph} disabled={!!busy}>
+                {busy === 'kg' ? <Spinner /> : 'Knowledge graph'}
+              </Button>
             </div>
             <p className="text-xs text-slate-400">
-              Generated content is added to the canvas and shared live with collaborators.
+              Results are added to the canvas and shared live with collaborators.
             </p>
+          </>
+        )}
+
+        {tab === 'agents' && (
+          <>
+            <Input
+              placeholder="Brief for the agent…"
+              value={agentPrompt}
+              onChange={(e) => setAgentPrompt(e.target.value)}
+            />
+            <div className="grid grid-cols-2 gap-2">
+              {AGENTS.map((a) => (
+                <Button key={a.kind} variant="ghost" onClick={() => runAgent(a.kind)} disabled={!!busy}>
+                  {busy === a.kind ? <Spinner /> : a.label}
+                </Button>
+              ))}
+            </div>
+            {agentText && (
+              <div className="whitespace-pre-wrap rounded bg-slate-50 p-2 text-xs dark:bg-slate-800">
+                {agentText}
+              </div>
+            )}
+            <div className="border-t border-slate-200 pt-3 dark:border-slate-800">
+              <label className="mb-1 block text-xs font-medium text-slate-500">Meeting notes</label>
+              <textarea
+                value={meetingNotes}
+                onChange={(e) => setMeetingNotes(e.target.value)}
+                placeholder="Paste raw meeting notes…"
+                className="h-24 w-full resize-none rounded-md border border-slate-300 bg-white p-2 text-xs outline-none focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-900"
+              />
+              <Button className="mt-2 w-full" onClick={processMeeting} disabled={!!busy}>
+                {busy === 'meeting' ? <Spinner /> : 'Process meeting → board'}
+              </Button>
+            </div>
           </>
         )}
 
@@ -178,25 +268,19 @@ export function AiPanel({
         )}
 
         {tab === 'chat' && (
-          <div className="flex h-full flex-col">
-            <div className="flex-1 space-y-2">
-              {chatLog.length === 0 && (
-                <p className="text-slate-400">Ask anything about this board.</p>
-              )}
-              {chatLog.map((m, i) => (
-                <div
-                  key={i}
-                  className={`rounded p-2 text-xs ${
-                    m.role === 'user'
-                      ? 'bg-indigo-50 dark:bg-indigo-950'
-                      : 'bg-slate-50 dark:bg-slate-800'
-                  }`}
-                >
-                  <span className="whitespace-pre-wrap">{m.content}</span>
-                </div>
-              ))}
-              {busy === 'chat' && <Spinner className="text-indigo-600" />}
-            </div>
+          <div className="space-y-2">
+            {chatLog.length === 0 && <p className="text-slate-400">Ask anything about this board.</p>}
+            {chatLog.map((m, i) => (
+              <div
+                key={i}
+                className={`rounded p-2 text-xs ${
+                  m.role === 'user' ? 'bg-indigo-50 dark:bg-indigo-950' : 'bg-slate-50 dark:bg-slate-800'
+                }`}
+              >
+                <span className="whitespace-pre-wrap">{m.content}</span>
+              </div>
+            ))}
+            {busy === 'chat' && <Spinner className="text-indigo-600" />}
           </div>
         )}
       </div>
@@ -209,11 +293,7 @@ export function AiPanel({
           }}
           className="flex gap-2 border-t border-slate-200 p-2 dark:border-slate-800"
         >
-          <Input
-            placeholder="Ask the board…"
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-          />
+          <Input placeholder="Ask the board…" value={chatInput} onChange={(e) => setChatInput(e.target.value)} />
           <Button type="submit" disabled={!!busy}>
             Send
           </Button>

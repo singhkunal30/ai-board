@@ -14,16 +14,20 @@ export default function WorkspaceBoardsPage() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [boards, setBoards] = useState<Board[] | null>(null);
+  const [templates, setTemplates] = useState<{ id: string; name: string; description: string }[]>([]);
   const [title, setTitle] = useState('');
+  const [templateId, setTemplateId] = useState('blank');
   const [creating, setCreating] = useState(false);
 
   async function load() {
-    const [ws, bs] = await Promise.all([
+    const [ws, bs, tpls] = await Promise.all([
       api<Workspace>(`/workspaces/${workspaceId}`),
       api<Board[]>(`/workspaces/${workspaceId}/boards`),
+      api<{ id: string; name: string; description: string }[]>(`/templates`),
     ]);
     setWorkspace(ws);
     setBoards(bs);
+    setTemplates(tpls);
   }
 
   useEffect(() => {
@@ -36,7 +40,10 @@ export default function WorkspaceBoardsPage() {
     if (!title.trim()) return;
     setCreating(true);
     try {
-      await api<Board>(`/workspaces/${workspaceId}/boards`, { method: 'POST', body: { title } });
+      await api<Board>(`/workspaces/${workspaceId}/boards`, {
+        method: 'POST',
+        body: { title, ...(templateId !== 'blank' ? { templateId } : {}) },
+      });
       setTitle('');
       await load();
     } finally {
@@ -52,8 +59,25 @@ export default function WorkspaceBoardsPage() {
       <main className="mx-auto max-w-5xl px-4 py-8">
         <h1 className="mb-6 text-2xl font-semibold">Boards</h1>
 
-        <form onSubmit={create} className="mb-8 flex gap-2">
-          <Input placeholder="New board title" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <form onSubmit={create} className="mb-8 flex flex-wrap gap-2">
+          <Input
+            placeholder="New board title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="flex-1"
+          />
+          <select
+            value={templateId}
+            onChange={(e) => setTemplateId(e.target.value)}
+            title="Start from a template"
+            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          >
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
           <Button type="submit" disabled={creating}>
             {creating ? <Spinner /> : 'Create board'}
           </Button>
