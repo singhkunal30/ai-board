@@ -19,6 +19,7 @@ import { RagModule } from './ai/rag/rag.module';
 import { BoardAiModule } from './ai/features/board-ai.module';
 import { StorageModule } from './storage/storage.module';
 import { DocumentsModule } from './documents/documents.module';
+import { CommentsModule } from './comments/comments.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { HealthModule } from './health/health.module';
 import { ObservabilityModule } from './observability/observability.module';
@@ -57,6 +58,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     StorageModule,
     BoardAiModule,
     DocumentsModule,
+    CommentsModule,
     RealtimeModule,
     HealthModule,
   ],

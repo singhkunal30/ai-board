@@ -7,13 +7,15 @@ import { useRequireAuth } from '@/lib/use-require-auth';
 import type { Board } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { BoardCanvas } from '@/components/Canvas';
-import { Spinner } from '@/components/ui';
+import { CommentsPanel } from '@/components/CommentsPanel';
+import { Button, Spinner } from '@/components/ui';
 
 export default function BoardPage() {
   const token = useRequireAuth();
   const { boardId } = useParams<{ boardId: string }>();
   const [board, setBoard] = useState<Board | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showComments, setShowComments] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -26,7 +28,11 @@ export default function BoardPage() {
 
   return (
     <div className="flex h-screen flex-col">
-      <TopBar title={board?.title ?? 'Board'} />
+      <TopBar title={board?.title ?? 'Board'}>
+        <Button variant="ghost" onClick={() => setShowComments((s) => !s)}>
+          💬 Comments
+        </Button>
+      </TopBar>
       <div className="relative flex-1">
         {error ? (
           <div className="flex h-full items-center justify-center text-red-500">{error}</div>
@@ -35,7 +41,10 @@ export default function BoardPage() {
             <Spinner className="h-6 w-6 text-indigo-600" />
           </div>
         ) : (
-          <BoardCanvas boardId={boardId} />
+          <>
+            <BoardCanvas boardId={boardId} />
+            {showComments && <CommentsPanel boardId={boardId} onClose={() => setShowComments(false)} />}
+          </>
         )}
       </div>
     </div>
