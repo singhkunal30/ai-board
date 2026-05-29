@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased dark:bg-canvas-dark dark:text-slate-100;
+}
+
+/* React Flow respects CSS variables for its surface. */
+.react-flow {
+  --xy-background-color: theme('colors.slate.50');
+}
+.dark .react-flow {
+  --xy-background-color: theme('colors.canvas.dark');
+}
