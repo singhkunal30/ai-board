@@ -31,7 +31,7 @@ export default function WorkspaceBoardsPage() {
   async function load() {
     const [ws, bs, tpls, ds] = await Promise.all([
       api<Workspace>(`/workspaces/${workspaceId}`),
-      api<Board[]>(`/workspaces/${workspaceId}/boards`),
+      api<Board[]>(`/workspaces/${workspaceId}/boards?includeArchived=true`),
       api<{ id: string; name: string; description: string }[]>(`/templates`),
       api<DocItem[]>(`/workspaces/${workspaceId}/documents`),
     ]);
@@ -82,6 +82,23 @@ export default function WorkspaceBoardsPage() {
     }
   }
 
+  async function boardAction(
+    board: Board,
+    action: 'duplicate' | 'archive' | 'delete',
+  ) {
+    if (action === 'delete') {
+      if (!confirm('Delete this board? This cannot be undone from the UI.')) return;
+      await api(`/boards/${board.id}`, { method: 'DELETE' });
+    } else if (action === 'archive') {
+      await api(`/boards/${board.id}/${board.isArchived ? 'unarchive' : 'archive'}`, {
+        method: 'POST',
+      });
+    } else {
+      await api(`/boards/${board.id}/duplicate`, { method: 'POST' });
+    }
+    await load();
+  }
+
   if (!token) return null;
 
   return (
@@ -121,16 +138,46 @@ export default function WorkspaceBoardsPage() {
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {boards.map((b) => (
-              <li key={b.id}>
-                <Link
-                  href={`/boards/${b.id}`}
-                  className="flex h-32 flex-col justify-between rounded-lg border border-slate-200 bg-white p-4 transition hover:border-indigo-400 dark:border-slate-800 dark:bg-slate-900"
-                >
-                  <span className="font-medium">{b.title}</span>
+              <li
+                key={b.id}
+                className="group relative flex h-32 flex-col justify-between rounded-lg border border-slate-200 bg-white p-4 transition hover:border-indigo-400 dark:border-slate-800 dark:bg-slate-900"
+              >
+                <Link href={`/boards/${b.id}`} className="flex flex-1 flex-col justify-between">
+                  <span className="font-medium">
+                    {b.title}
+                    {b.isArchived && (
+                      <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500 dark:bg-slate-800">
+                        archived
+                      </span>
+                    )}
+                  </span>
                   <span className="text-xs text-slate-400">
                     Updated {new Date(b.updatedAt).toLocaleString()}
                   </span>
                 </Link>
+                <div className="absolute right-2 top-2 hidden gap-1 group-hover:flex">
+                  <button
+                    onClick={() => boardAction(b, 'duplicate')}
+                    title="Duplicate"
+                    className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
+                  >
+                    ⧉
+                  </button>
+                  <button
+                    onClick={() => boardAction(b, 'archive')}
+                    title={b.isArchived ? 'Unarchive' : 'Archive'}
+                    className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
+                  >
+                    🗄
+                  </button>
+                  <button
+                    onClick={() => boardAction(b, 'delete')}
+                    title="Delete"
+                    className="rounded p-1 text-slate-400 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950"
+                  >
+                    ✕
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

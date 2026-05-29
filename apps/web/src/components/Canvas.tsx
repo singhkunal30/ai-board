@@ -137,6 +137,26 @@ function CanvasInner({ boardId }: { boardId: string }) {
     [sync],
   );
 
+  // Cmd/Ctrl+D duplicates selected nodes. (Delete/Backspace removal is handled
+  // by React Flow via onNodesChange 'remove'.)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        for (const n of rfNodes.filter((node) => node.selected)) {
+          const obj = (n.data as BoardNodeData).object;
+          sync.addObject({
+            ...obj,
+            id: crypto.randomUUID(),
+            position: { x: obj.position.x + 24, y: obj.position.y + 24 },
+          });
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [rfNodes, sync]);
+
   const addAt = useCallback(
     (type: BoardObjectType) => {
       const center = screenToFlowPosition({
