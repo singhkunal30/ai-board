@@ -1,0 +1,95 @@
+# Local one-command stack for AI-Board.
+#   docker compose up -d
+#
+# Brings up Postgres (with pgvector), Redis, MinIO (S3), and Ollama.
+# The API/web apps run on the host during development (pnpm dev) and talk to
+# these services. Production images are built from the per-app Dockerfiles.
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: aiboard-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aiboard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aiboard_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-aiboard}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aiboard} -d ${POSTGRES_DB:-aiboard}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: aiboard-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: aiboard-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  # Creates the default bucket on first run.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${S3_ACCESS_KEY:-minioadmin} ${S3_SECRET_KEY:-minioadmin};
+      mc mb --ignore-existing local/${S3_BUCKET:-ai-board};
+      exit 0;
+      "
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: aiboard-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    # Uncomment to enable GPU acceleration (requires nvidia-container-toolkit):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
+  ollama-data:

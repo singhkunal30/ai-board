@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: aiboard
+          POSTGRES_PASSWORD: aiboard_dev_password
+          POSTGRES_DB: aiboard
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U aiboard -d aiboard"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://aiboard:aiboard_dev_password@localhost:5432/aiboard?schema=public
+      JWT_ACCESS_SECRET: ci-access-secret-ci-access-secret-1234567
+      JWT_REFRESH_SECRET: ci-refresh-secret-ci-refresh-secret-123456
+      AI_PROVIDER: mock
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared package
+        run: pnpm --filter @ai-board/shared build
+
+      - name: Generate Prisma client
+        run: pnpm --filter @ai-board/api prisma:generate
+
+      - name: Type-check
+        run: pnpm --filter @ai-board/shared typecheck && pnpm --filter @ai-board/api typecheck
+
+      - name: Build API
+        run: pnpm --filter @ai-board/api build
+
+      - name: Apply migrations
+        run: pnpm --filter @ai-board/api prisma:deploy
+
+      - name: Unit tests
+        run: pnpm --filter @ai-board/api test
+
+      - name: E2E tests
+        run: pnpm --filter @ai-board/api test:e2e

@@ -1,0 +1,41 @@
+{
+  "name": "ai-board",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-Board — an internal, AI-first collaborative whiteboard platform (Miro alternative) powered by local LLMs.",
+  "engines": {
+    "node": ">=20.11.0",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "db:generate": "pnpm --filter @ai-board/api prisma:generate",
+    "db:migrate": "pnpm --filter @ai-board/api prisma:migrate",
+    "db:deploy": "pnpm --filter @ai-board/api prisma:deploy",
+    "db:seed": "pnpm --filter @ai-board/api prisma:seed",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/client",
+      "@prisma/engines",
+      "argon2",
+      "prisma"
+    ]
+  }
+}
