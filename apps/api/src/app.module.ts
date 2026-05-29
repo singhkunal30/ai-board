@@ -14,6 +14,7 @@ import { UsersModule } from './users/users.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 import { BoardsModule } from './boards/boards.module';
 import { AiModule } from './ai/ai.module';
+import { BoardAiModule } from './ai/features/board-ai.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { HealthModule } from './health/health.module';
 import { ObservabilityModule } from './observability/observability.module';
@@ -47,6 +48,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     WorkspacesModule,
     BoardsModule,
     AiModule,
+    BoardAiModule,
     RealtimeModule,
     HealthModule,
   ],

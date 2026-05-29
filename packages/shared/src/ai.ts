@@ -80,6 +80,16 @@ export interface AiProvider {
   embed(input: string[], options?: EmbeddingOptions): Promise<EmbeddingResult>;
 }
 
+/** Kinds of content indexed into the RAG vector store. Mirrors the DB enum. */
+export const EmbeddingSourceType = {
+  BOARD_OBJECT: 'BOARD_OBJECT',
+  DOCUMENT_CHUNK: 'DOCUMENT_CHUNK',
+  COMMENT: 'COMMENT',
+  BOARD_SUMMARY: 'BOARD_SUMMARY',
+} as const;
+export type EmbeddingSourceType =
+  (typeof EmbeddingSourceType)[keyof typeof EmbeddingSourceType];
+
 /** The set of specialized agents exposed by the platform. */
 export const AgentKind = {
   ASSISTANT: 'assistant',

@@ -31,9 +31,11 @@ export class MockProvider implements AiProvider {
     ];
   }
 
-  async chat(messages: ChatMessage[], _options: ChatOptions = {}): Promise<ChatResult> {
+  async chat(messages: ChatMessage[], options: ChatOptions = {}): Promise<ChatResult> {
     const last = messages.filter((m) => m.role === 'user').at(-1);
-    const content = `mock-response: ${last?.content ?? ''}`.slice(0, 2000);
+    const content = options.json
+      ? this.mockJson(messages)
+      : `mock-response: ${last?.content ?? ''}`.slice(0, 2000);
     return {
       content,
       model: 'mock-chat',
@@ -42,6 +44,48 @@ export class MockProvider implements AiProvider {
       totalTokens: content.length,
       finishReason: 'stop',
     };
+  }
+
+  /**
+   * In JSON mode, returns a payload whose shape matches the requested feature
+   * (detected from the system prompt). This keeps the structured AI features
+   * exercisable in tests/CI and local dev without a real model.
+   */
+  private mockJson(messages: ChatMessage[]): string {
+    const system = messages.find((m) => m.role === 'system')?.content.toLowerCase() ?? '';
+    if (system.includes('mind map')) {
+      return JSON.stringify({
+        root: 'Mock Topic',
+        branches: [
+          { title: 'Branch A', children: ['Idea A1', 'Idea A2'] },
+          { title: 'Branch B', children: ['Idea B1'] },
+        ],
+      });
+    }
+    if (system.includes('diagram')) {
+      return JSON.stringify({
+        nodes: [
+          { id: 'client', label: 'Client' },
+          { id: 'api', label: 'API' },
+          { id: 'db', label: 'Database' },
+        ],
+        edges: [
+          { source: 'client', target: 'api', label: 'HTTP' },
+          { source: 'api', target: 'db', label: 'SQL' },
+        ],
+      });
+    }
+    if (system.includes('tasks')) {
+      return JSON.stringify({
+        tasks: [{ title: 'Mock task', priority: 'medium', suggestedOwner: '', notes: '' }],
+      });
+    }
+    if (system.includes('clusters')) {
+      return JSON.stringify({
+        clusters: [{ label: 'Mock Cluster', items: ['Item 1', 'Item 2'] }],
+      });
+    }
+    return JSON.stringify({ result: 'mock' });
   }
 
   async *chatStream(messages: ChatMessage[], options: ChatOptions = {}): AsyncIterable<ChatChunk> {
