@@ -13,6 +13,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { UsersModule } from './users/users.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 import { BoardsModule } from './boards/boards.module';
+import { TemplatesModule } from './templates/templates.module';
 import { AiModule } from './ai/ai.module';
 import { BoardAiModule } from './ai/features/board-ai.module';
 import { RealtimeModule } from './realtime/realtime.module';
@@ -47,6 +48,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     UsersModule,
     WorkspacesModule,
     BoardsModule,
+    TemplatesModule,
     AiModule,
     BoardAiModule,
     RealtimeModule,

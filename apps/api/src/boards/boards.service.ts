@@ -3,6 +3,7 @@ import type { Board, Prisma } from '@prisma/client';
 import { emptyBoardSnapshot } from '@ai-board/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { buildTemplate } from '../templates/templates';
 import {
   AddBoardMemberInput,
   BoardSnapshotInput,
@@ -18,6 +19,7 @@ export class BoardsService {
   ) {}
 
   async create(actorId: string, workspaceId: string, input: CreateBoardInput): Promise<Board> {
+    const seed = input.templateId ? buildTemplate(input.templateId) : null;
     const board = await this.prisma.board.create({
       data: {
         workspaceId,
@@ -25,7 +27,7 @@ export class BoardsService {
         description: input.description,
         visibility: input.visibility,
         createdById: actorId,
-        snapshot: emptyBoardSnapshot() as unknown as Prisma.InputJsonValue,
+        snapshot: (seed ?? emptyBoardSnapshot()) as unknown as Prisma.InputJsonValue,
         // Creator gets an explicit editor grant so PRIVATE boards remain
         // reachable by their author.
         members: { create: { userId: actorId, role: 'EDITOR' } },

@@ -5,6 +5,8 @@ export const createBoardSchema = z.object({
   title: z.string().trim().min(1).max(200),
   description: z.string().trim().max(2000).optional(),
   visibility: z.nativeEnum(BoardVisibility).default(BoardVisibility.WORKSPACE),
+  /** Optional built-in template to seed the board's initial content. */
+  templateId: z.string().trim().max(64).optional(),
 });
 export type CreateBoardInput = z.infer<typeof createBoardSchema>;
 
