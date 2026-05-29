@@ -14,6 +14,9 @@ const envSchema = z.object({
 
   REDIS_URL: z.string().default('redis://localhost:6379'),
 
+  // Storage driver: 's3' (MinIO / any S3-compatible) or 'filesystem' (local dev).
+  STORAGE_DRIVER: z.enum(['s3', 'filesystem']).default('s3'),
+  STORAGE_LOCAL_DIR: z.string().default('./.storage'),
   S3_ENDPOINT: z.string().default('http://localhost:9000'),
   S3_REGION: z.string().default('us-east-1'),
   S3_BUCKET: z.string().default('ai-board'),
@@ -65,6 +68,8 @@ export function loadConfiguration(): Config {
     database: { url: env.DATABASE_URL },
     redis: { url: env.REDIS_URL },
     storage: {
+      driver: env.STORAGE_DRIVER,
+      localDir: env.STORAGE_LOCAL_DIR,
       endpoint: env.S3_ENDPOINT,
       region: env.S3_REGION,
       bucket: env.S3_BUCKET,
@@ -101,6 +106,8 @@ export interface Config {
   database: { url: string };
   redis: { url: string };
   storage: {
+    driver: 's3' | 'filesystem';
+    localDir: string;
     endpoint: string;
     region: string;
     bucket: string;

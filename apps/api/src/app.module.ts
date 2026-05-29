@@ -15,7 +15,10 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
 import { BoardsModule } from './boards/boards.module';
 import { TemplatesModule } from './templates/templates.module';
 import { AiModule } from './ai/ai.module';
+import { RagModule } from './ai/rag/rag.module';
 import { BoardAiModule } from './ai/features/board-ai.module';
+import { StorageModule } from './storage/storage.module';
+import { DocumentsModule } from './documents/documents.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { HealthModule } from './health/health.module';
 import { ObservabilityModule } from './observability/observability.module';
@@ -50,7 +53,10 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
     BoardsModule,
     TemplatesModule,
     AiModule,
+    RagModule,
+    StorageModule,
     BoardAiModule,
+    DocumentsModule,
     RealtimeModule,
     HealthModule,
   ],

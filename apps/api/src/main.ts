@@ -6,6 +6,7 @@ import {
 } from '@nestjs/platform-fastify';
 import helmet from '@fastify/helmet';
 import cookie from '@fastify/cookie';
+import multipart from '@fastify/multipart';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
@@ -29,6 +30,7 @@ async function bootstrap(): Promise<void> {
 
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(cookie);
+  await app.register(multipart, { limits: { fileSize: 25 * 1024 * 1024, files: 1 } });
 
   app.enableCors({
     origin: config.http.corsOrigins,

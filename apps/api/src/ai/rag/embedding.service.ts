@@ -94,11 +94,11 @@ export class EmbeddingService {
     return expanded.length;
   }
 
-  /** Cosine-similarity search scoped to a workspace (optionally a board). */
+  /** Cosine-similarity search scoped to a workspace (optionally a board / source type). */
   async search(
     workspaceId: string,
     query: string,
-    opts: { boardId?: string; limit?: number } = {},
+    opts: { boardId?: string; limit?: number; sourceType?: EmbeddingSourceType } = {},
   ): Promise<SearchHit[]> {
     const limit = Math.min(opts.limit ?? 8, 50);
     const { embeddings } = await this.ai.embed([query]);
@@ -107,17 +107,25 @@ export class EmbeddingService {
     const boardFilter = opts.boardId
       ? Prisma.sql`AND "boardId" = ${opts.boardId}::uuid`
       : Prisma.empty;
+    const typeFilter = opts.sourceType
+      ? Prisma.sql`AND "sourceType" = ${opts.sourceType}::"EmbeddingSourceType"`
+      : Prisma.empty;
 
     return this.prisma.$queryRaw<SearchHit[]>`
       SELECT "id", "content", "sourceType", "sourceId", "boardId",
              1 - ("embedding" <=> ${vec}::vector) AS "score"
       FROM "embeddings"
-      WHERE "workspaceId" = ${workspaceId}::uuid AND "embedding" IS NOT NULL ${boardFilter}
+      WHERE "workspaceId" = ${workspaceId}::uuid AND "embedding" IS NOT NULL ${boardFilter} ${typeFilter}
       ORDER BY "embedding" <=> ${vec}::vector
       LIMIT ${limit}`;
   }
 
   async deleteForBoard(boardId: string): Promise<void> {
     await this.prisma.$executeRaw`DELETE FROM "embeddings" WHERE "boardId" = ${boardId}::uuid`;
+  }
+
+  async deleteForSources(sourceIds: string[]): Promise<void> {
+    if (sourceIds.length === 0) return;
+    await this.prisma.$executeRaw`DELETE FROM "embeddings" WHERE "sourceId" IN (${Prisma.join(sourceIds)})`;
   }
 }

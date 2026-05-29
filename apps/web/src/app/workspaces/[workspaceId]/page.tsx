@@ -3,11 +3,18 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, uploadFile } from '@/lib/api';
 import { useRequireAuth } from '@/lib/use-require-auth';
 import type { Board, Workspace } from '@/lib/types';
 import { TopBar } from '@/components/TopBar';
 import { Button, Input, Spinner } from '@/components/ui';
+
+interface DocItem {
+  id: string;
+  filename: string;
+  status: string;
+  sizeBytes: number;
+}
 
 export default function WorkspaceBoardsPage() {
   const token = useRequireAuth();
@@ -15,19 +22,43 @@ export default function WorkspaceBoardsPage() {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [boards, setBoards] = useState<Board[] | null>(null);
   const [templates, setTemplates] = useState<{ id: string; name: string; description: string }[]>([]);
+  const [docs, setDocs] = useState<DocItem[]>([]);
   const [title, setTitle] = useState('');
   const [templateId, setTemplateId] = useState('blank');
   const [creating, setCreating] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   async function load() {
-    const [ws, bs, tpls] = await Promise.all([
+    const [ws, bs, tpls, ds] = await Promise.all([
       api<Workspace>(`/workspaces/${workspaceId}`),
       api<Board[]>(`/workspaces/${workspaceId}/boards`),
       api<{ id: string; name: string; description: string }[]>(`/templates`),
+      api<DocItem[]>(`/workspaces/${workspaceId}/documents`),
     ]);
     setWorkspace(ws);
     setBoards(bs);
     setTemplates(tpls);
+    setDocs(ds);
+  }
+
+  async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      await uploadFile(`/workspaces/${workspaceId}/documents`, file);
+      e.target.value = '';
+      // Reload now and again shortly, to reflect async processing status.
+      await load();
+      setTimeout(() => void load(), 2000);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function deleteDoc(id: string) {
+    await api(`/workspaces/${workspaceId}/documents/${id}`, { method: 'DELETE' });
+    await load();
   }
 
   useEffect(() => {
@@ -104,6 +135,56 @@ export default function WorkspaceBoardsPage() {
             ))}
           </ul>
         )}
+
+        <section className="mt-12">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Knowledge documents</h2>
+            <label className="cursor-pointer rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500">
+              {uploading ? 'Uploading…' : 'Upload file'}
+              <input
+                type="file"
+                className="hidden"
+                accept=".pdf,.docx,.txt,.md,.csv,.json,image/*"
+                onChange={onUpload}
+                disabled={uploading}
+              />
+            </label>
+          </div>
+          <p className="mb-3 text-sm text-slate-500">
+            Uploaded documents are parsed and embedded so board chat can answer from them.
+          </p>
+          {docs.length === 0 ? (
+            <p className="text-slate-400">No documents yet.</p>
+          ) : (
+            <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+              {docs.map((d) => (
+                <li key={d.id} className="flex items-center justify-between px-4 py-3 text-sm">
+                  <span className="font-medium">{d.filename}</span>
+                  <span className="flex items-center gap-3">
+                    <span
+                      className={`rounded px-2 py-0.5 text-xs ${
+                        d.status === 'READY'
+                          ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300'
+                          : d.status === 'FAILED'
+                            ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'
+                            : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                      }`}
+                    >
+                      {d.status}
+                    </span>
+                    <button
+                      onClick={() => deleteDoc(d.id)}
+                      className="text-slate-400 hover:text-red-500"
+                      aria-label="Delete document"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </main>
     </div>
   );

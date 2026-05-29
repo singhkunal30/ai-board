@@ -94,6 +94,25 @@ export interface AuthResult {
   tokens: AuthTokens;
 }
 
+/** Uploads a file via multipart/form-data with the bearer token. */
+export async function uploadFile<T>(path: string, file: File): Promise<T> {
+  const form = new FormData();
+  form.append('file', file);
+  const token = useAuthStore.getState().accessToken;
+  const res = await fetch(`${API_URL}/api${path}`, {
+    method: 'POST',
+    headers: token ? { authorization: `Bearer ${token}` } : {},
+    body: form,
+  });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : undefined;
+  if (!res.ok) {
+    const message = (data?.message as string) ?? `Upload failed (${res.status})`;
+    throw new ApiError(Array.isArray(message) ? message.join(', ') : message, res.status);
+  }
+  return data as T;
+}
+
 export const authApi = {
   login: (email: string, password: string) =>
     api<AuthResult>('/auth/login', { method: 'POST', body: { email, password }, anonymous: true }),

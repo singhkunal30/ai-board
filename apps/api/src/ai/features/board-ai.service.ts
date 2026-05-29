@@ -266,11 +266,17 @@ export class BoardAiService {
     history: ChatMessage[] = [],
   ): Promise<{ answer: string; sources: SearchHit[] }> {
     const { workspaceId } = await this.snapshotOf(boardId);
-    let hits = await this.embeddings.search(workspaceId, message, { boardId, limit: 8 });
+    let hits = await this.embeddings.search(workspaceId, message, { boardId, limit: 6 });
     if (hits.length === 0) {
       await this.indexBoard(boardId);
-      hits = await this.embeddings.search(workspaceId, message, { boardId, limit: 8 });
+      hits = await this.embeddings.search(workspaceId, message, { boardId, limit: 6 });
     }
+    // Also pull in relevant uploaded workspace documents.
+    const docHits = await this.embeddings.search(workspaceId, message, {
+      sourceType: EmbeddingSourceType.DOCUMENT_CHUNK,
+      limit: 4,
+    });
+    hits = [...hits, ...docHits];
 
     const context = hits.map((h, i) => `[${i + 1}] ${h.content}`).join('\n');
     const messages: ChatMessage[] = [
