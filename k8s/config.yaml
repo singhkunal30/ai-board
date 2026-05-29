@@ -1,0 +1,43 @@
+# Non-secret configuration. Secrets (DB URL, JWT keys, S3 keys) live in the
+# Secret below and MUST be replaced before applying to a real cluster.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-board-config
+  namespace: ai-board
+data:
+  NODE_ENV: "production"
+  API_PORT: "4000"
+  API_HOST: "0.0.0.0"
+  CORS_ORIGINS: "https://board.example.com"
+  REDIS_URL: "redis://redis:6379"
+  STORAGE_DRIVER: "s3"
+  S3_ENDPOINT: "http://minio:9000"
+  S3_REGION: "us-east-1"
+  S3_BUCKET: "ai-board"
+  S3_FORCE_PATH_STYLE: "true"
+  AI_PROVIDER: "ollama"
+  AI_BASE_URL: "http://ollama:11434"
+  AI_DEFAULT_CHAT_MODEL: "qwen2.5:7b-instruct"
+  AI_DEFAULT_EMBEDDING_MODEL: "nomic-embed-text"
+  AI_EMBEDDING_DIMENSIONS: "768"
+  LOG_LEVEL: "info"
+  METRICS_ENABLED: "true"
+---
+# Replace ALL values before applying. Prefer a sealed-secrets / external-secrets
+# operator in production rather than committing real values.
+#   kubectl -n ai-board create secret generic ai-board-secrets \
+#     --from-literal=DATABASE_URL=... --from-literal=JWT_ACCESS_SECRET=... ...
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ai-board-secrets
+  namespace: ai-board
+type: Opaque
+stringData:
+  DATABASE_URL: "postgresql://aiboard:CHANGE_ME@postgres:5432/aiboard?schema=public"
+  JWT_ACCESS_SECRET: "CHANGE_ME_at_least_32_characters_long_secret"
+  JWT_REFRESH_SECRET: "CHANGE_ME_another_32_characters_long_secret"
+  S3_ACCESS_KEY: "CHANGE_ME"
+  S3_SECRET_KEY: "CHANGE_ME"
+  POSTGRES_PASSWORD: "CHANGE_ME"

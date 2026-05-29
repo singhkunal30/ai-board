@@ -1,0 +1,43 @@
+# Routes the web app and API behind one host. The /realtime WebSocket upgrade
+# is served by the API service. Adjust host, TLS and the ingress class to your
+# cluster (example uses nginx-ingress + cert-manager).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-board
+  namespace: ai-board
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - board.example.com
+      secretName: ai-board-tls
+  rules:
+    - host: board.example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 4000
+          - path: /realtime
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 4000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 3000

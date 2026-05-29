@@ -1,0 +1,14 @@
+# Prometheus scrape config for AI-Board. In Kubernetes, the API pods are
+# annotated (prometheus.io/scrape) so a kube-prometheus-stack picks them up
+# automatically; this static config is for the Docker Compose / VM setup.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: ai-board-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["api:4000"]
+        labels:
+          service: ai-board-api

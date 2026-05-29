@@ -19,38 +19,42 @@ and run — not a big-bang. This document tracks what's done and what's next.
 
 ## Phase 1 — Persistence & RAG depth
 
-- [ ] Object storage service (MinIO/S3) with signed URLs
-- [ ] Document ingestion pipeline (PDF/DOCX/TXT/MD/image) → chunk → embed
-- [ ] RAG retrieval service (cosine + hybrid keyword/vector ranking)
+- [x] Object storage service (MinIO/S3 + filesystem driver)
+- [x] Document ingestion pipeline (PDF/DOCX/TXT/MD) → chunk → embed
+- [x] RAG retrieval service (cosine search; board + document context)
+- [x] Comments API + web panel
+- [ ] Signed URLs for object download; hybrid keyword/vector ranking
 - [ ] Board snapshot ↔ CRDT reconciliation (derive `snapshot` from `yDocState`)
-- [ ] Comments API + presence persistence
 
 ## Phase 2 — Web client
 
-- [ ] Next.js + React + Tailwind app, dark/light themes
-- [ ] Infinite canvas (React Flow / Konva): pan, zoom, minimap, virtual render
-- [ ] Object types: sticky notes, text, shapes, arrows, images, code, markdown,
-      tables, frames, flowchart/UML/mindmap nodes
-- [ ] Live collaboration UI: cursors, presence, selections via Yjs
-- [ ] Auth flows, workspace/board management, templates
+- [x] Next.js + React + Tailwind app, dark/light themes
+- [x] Infinite canvas (React Flow): pan, zoom, minimap
+- [x] Object types: sticky notes, text, shapes, mindmap/flowchart nodes,
+      markdown (PRD); connectors between nodes
+- [x] Live collaboration UI: presence avatars + remote cursors via Yjs
+- [x] Auth flows, workspace/board management, templates, documents UI
+- [ ] More object types (tables, code blocks, embedded images), keyboard
+      shortcuts, fuller accessibility pass
 
 ## Phase 3 — AI features
 
-- [ ] Board assistant (summarize/explain/risks/gaps/duplicates)
-- [ ] Mind-map generation; diagram generation (architecture, flow)
-- [ ] Sticky-note clustering & theming
-- [ ] Task extraction; knowledge graph
-- [ ] Board chat (RAG over board + workspace)
-- [ ] Meeting mode (notes → decisions/actions on board)
-- [ ] Agent system (Product Manager, Architect, Research, Scrum) via orchestration
+- [x] Board assistant: summarize, extract tasks
+- [x] Mind-map generation; diagram generation (architecture, flow)
+- [x] Sticky-note clustering; knowledge graph
+- [x] Board chat (RAG over board + uploaded documents)
+- [x] Meeting mode (notes → decisions/actions on board); research mode
+- [x] Agent system (Product Manager, Architect, Research, Scrum)
+- [ ] Multimodal/vision (image understanding) when the model supports it
 
 ## Phase 4 — Enterprise & scale
 
+- [x] Kubernetes manifests (kustomize) + HPA; API/web Dockerfiles
+- [x] Prometheus metrics + scrape config; production deployment guide
+- [x] E2E test suite (full HTTP flow against Postgres)
 - [ ] SSO / OIDC, Google & Microsoft login (schema ready: `oauth_identities`)
 - [ ] Redis-backed rate limiting and Hocuspocus multi-node fan-out
-- [ ] Kubernetes manifests + Helm chart; HPA
-- [ ] Tracing (OpenTelemetry) + Grafana dashboards
-- [ ] E2E (Playwright) + load tests (k6); coverage gates
+- [ ] OpenTelemetry tracing + Grafana dashboards; k6 load tests
 - [ ] Backups, data residency, field-level encryption for documents
 
 ## Non-goals (for now)
