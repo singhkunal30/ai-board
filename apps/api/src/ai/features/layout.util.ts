@@ -164,6 +164,36 @@ export function layoutDiagram(spec: DiagramSpec, origin = { x: 0, y: 0 }): Gener
   return { objects, edges };
 }
 
+/** A standalone text/heading object. */
+export function textNode(
+  text: string,
+  x: number,
+  y: number,
+  style?: Record<string, unknown>,
+): BoardObjectBase {
+  return {
+    id: randomUUID(),
+    type: BoardObjectType.TEXT,
+    position: { x: Math.round(x), y: Math.round(y) },
+    size: { width: 240, height: 48 },
+    zIndex: 1,
+    data: { text },
+    style: { fontWeight: 700, fontSize: 18, ...style },
+  };
+}
+
+/** A titled vertical column of sticky notes (heading + stacked notes). */
+export function labeledColumn(
+  title: string,
+  items: string[],
+  origin: { x: number; y: number },
+  color: string,
+): GeneratedFragment {
+  const heading = textNode(title, origin.x, origin.y);
+  const grid = layoutStickyGrid(items, { x: origin.x, y: origin.y + 64 }, 1, color);
+  return { objects: [heading, ...grid.objects], edges: [] };
+}
+
 /** Places a list of short texts as a tidy grid of sticky notes. */
 export function layoutStickyGrid(
   texts: string[],

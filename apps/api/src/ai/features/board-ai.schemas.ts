@@ -18,3 +18,13 @@ export const boardChatSchema = z.object({
     .optional(),
 });
 export type BoardChatInput = z.infer<typeof boardChatSchema>;
+
+export const meetingSchema = z.object({
+  notes: z.string().trim().min(10).max(50_000),
+});
+export type MeetingInput = z.infer<typeof meetingSchema>;
+
+export const agentSchema = z.object({
+  prompt: z.string().trim().min(3).max(4000),
+});
+export type AgentInput = z.infer<typeof agentSchema>;

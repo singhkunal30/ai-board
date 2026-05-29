@@ -85,6 +85,38 @@ export class MockProvider implements AiProvider {
         clusters: [{ label: 'Mock Cluster', items: ['Item 1', 'Item 2'] }],
       });
     }
+    if (system.includes('meeting notes')) {
+      return JSON.stringify({
+        summary: 'Mock meeting summary.',
+        decisions: ['Adopt the mock plan'],
+        actionItems: ['Alice to draft spec'],
+        followUps: ['Revisit next week'],
+      });
+    }
+    if (system.includes('knowledge graph')) {
+      return JSON.stringify({
+        nodes: [
+          { id: 'a', label: 'Concept A' },
+          { id: 'b', label: 'Concept B' },
+        ],
+        edges: [{ source: 'a', target: 'b', label: 'relates to' }],
+      });
+    }
+    if (system.includes('research assistant')) {
+      return JSON.stringify({
+        gaps: ['Unvalidated assumption'],
+        questions: ['Who is the user?'],
+        experiments: ['Run a quick survey'],
+        nextSteps: ['Prototype the flow'],
+      });
+    }
+    if (system.includes('scrum')) {
+      return JSON.stringify({
+        stories: [
+          { title: 'As a user I want to log in so that I can access my boards', points: 3, priority: 'high' },
+        ],
+      });
+    }
     return JSON.stringify({ result: 'mock' });
   }
 

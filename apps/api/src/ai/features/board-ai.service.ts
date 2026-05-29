@@ -12,16 +12,21 @@ import { boardTextUnits, renderBoardForPrompt } from '../rag/board-content';
 import {
   DiagramSpec,
   GeneratedFragment,
+  labeledColumn,
   layoutDiagram,
   layoutMindMap,
   layoutStickyGrid,
   MindMap,
+  textNode,
 } from './layout.util';
 import {
   BOARD_CHAT_SYSTEM,
   CLUSTER_SYSTEM,
   DIAGRAM_SYSTEM,
+  KNOWLEDGE_GRAPH_SYSTEM,
+  MEETING_SYSTEM,
   MINDMAP_SYSTEM,
+  RESEARCH_SYSTEM,
   SUMMARY_SYSTEM,
   TASKS_SYSTEM,
 } from './prompts';
@@ -36,6 +41,20 @@ export interface Task {
 export interface Cluster {
   label: string;
   items: string[];
+}
+
+export interface MeetingResult {
+  summary: string;
+  decisions: string[];
+  actionItems: string[];
+  followUps: string[];
+}
+
+export interface ResearchResult {
+  gaps: string[];
+  questions: string[];
+  experiments: string[];
+  nextSteps: string[];
 }
 
 /**
@@ -79,6 +98,81 @@ export class BoardAiService {
     };
     await this.boards.saveSnapshot(actorId, boardId, merged as never);
     return fragment;
+  }
+
+  /** Builds a fragment at the board's free space and appends it. Public so the
+   *  agent system can place content without duplicating placement logic. */
+  async appendBuilt(
+    actorId: string,
+    boardId: string,
+    builder: (origin: { x: number; y: number }) => GeneratedFragment,
+  ): Promise<GeneratedFragment> {
+    const { snapshot } = await this.snapshotOf(boardId);
+    const fragment = builder(this.placementOrigin(snapshot));
+    return this.appendFragment(actorId, boardId, snapshot, fragment);
+  }
+
+  /** A prompt-ready rendering of the current board content. */
+  async rendered(boardId: string): Promise<string> {
+    const { snapshot } = await this.snapshotOf(boardId);
+    return renderBoardForPrompt(snapshot);
+  }
+
+  /** Meeting mode: structure raw notes and place them on the board. */
+  async meetingMode(
+    actorId: string,
+    boardId: string,
+    notes: string,
+  ): Promise<{ meeting: MeetingResult; fragment: GeneratedFragment }> {
+    const meeting = await this.ai.chatJson<MeetingResult>([
+      { role: 'system', content: MEETING_SYSTEM },
+      { role: 'user', content: `Meeting notes:\n${notes}` },
+    ]);
+    const fragment = await this.appendBuilt(actorId, boardId, (origin) => {
+      const objs = [textNode('Meeting Summary', origin.x, origin.y - 70, { fontSize: 22 })];
+      const summaryNote = layoutStickyGrid([meeting.summary || '—'], origin, 1, '#e0e7ff');
+      objs.push(...summaryNote.objects);
+      const cols = [
+        labeledColumn('Decisions', meeting.decisions ?? [], { x: origin.x + 240, y: origin.y }, '#bbf7d0'),
+        labeledColumn('Action Items', meeting.actionItems ?? [], { x: origin.x + 480, y: origin.y }, '#fde68a'),
+        labeledColumn('Follow-ups', meeting.followUps ?? [], { x: origin.x + 720, y: origin.y }, '#bfdbfe'),
+      ];
+      return { objects: [...objs, ...cols.flatMap((c) => c.objects)], edges: [] };
+    });
+    return { meeting, fragment };
+  }
+
+  /** Knowledge graph: extract relationships and lay them out as a diagram. */
+  async knowledgeGraph(actorId: string, boardId: string): Promise<GeneratedFragment> {
+    const rendered = await this.rendered(boardId);
+    if (!rendered.trim()) return { objects: [], edges: [] };
+    const spec = await this.ai.chatJson<DiagramSpec>([
+      { role: 'system', content: KNOWLEDGE_GRAPH_SYSTEM },
+      { role: 'user', content: `Board contents:\n${rendered}` },
+    ]);
+    return this.appendBuilt(actorId, boardId, (origin) => layoutDiagram(spec, origin));
+  }
+
+  /** Research mode: surface gaps, questions, experiments and next steps. */
+  async research(
+    actorId: string,
+    boardId: string,
+  ): Promise<{ research: ResearchResult; fragment: GeneratedFragment }> {
+    const rendered = await this.rendered(boardId);
+    const research = await this.ai.chatJson<ResearchResult>([
+      { role: 'system', content: RESEARCH_SYSTEM },
+      { role: 'user', content: `Board contents:\n${rendered || '(empty)'}` },
+    ]);
+    const fragment = await this.appendBuilt(actorId, boardId, (origin) => {
+      const cols = [
+        labeledColumn('Gaps', research.gaps ?? [], { x: origin.x, y: origin.y }, '#fecaca'),
+        labeledColumn('Questions', research.questions ?? [], { x: origin.x + 240, y: origin.y }, '#fde68a'),
+        labeledColumn('Experiments', research.experiments ?? [], { x: origin.x + 480, y: origin.y }, '#bbf7d0'),
+        labeledColumn('Next Steps', research.nextSteps ?? [], { x: origin.x + 720, y: origin.y }, '#bfdbfe'),
+      ];
+      return { objects: cols.flatMap((c) => c.objects), edges: [] };
+    });
+    return { research, fragment };
   }
 
   async generateMindMap(actorId: string, boardId: string, prompt: string): Promise<GeneratedFragment> {

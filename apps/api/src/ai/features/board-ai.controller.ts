@@ -9,6 +9,8 @@ import {
   boardChatSchema,
   GeneratePromptInput,
   generatePromptSchema,
+  MeetingInput,
+  meetingSchema,
 } from './board-ai.schemas';
 
 /** Board-scoped AI features. Mutating features need CONTENT_EDIT; read-only need AI_USE. */
@@ -68,5 +70,27 @@ export class BoardAiController {
     @Body(new ZodValidationPipe(boardChatSchema)) dto: BoardChatInput,
   ) {
     return this.boardAi.chat(boardId, dto.message, dto.history);
+  }
+
+  @Post('meeting')
+  @RequirePermissions(Permission.CONTENT_EDIT, Permission.AI_USE)
+  meeting(
+    @CurrentUser('id') userId: string,
+    @Param('boardId') boardId: string,
+    @Body(new ZodValidationPipe(meetingSchema)) dto: MeetingInput,
+  ) {
+    return this.boardAi.meetingMode(userId, boardId, dto.notes);
+  }
+
+  @Post('knowledge-graph')
+  @RequirePermissions(Permission.CONTENT_EDIT, Permission.AI_USE)
+  knowledgeGraph(@CurrentUser('id') userId: string, @Param('boardId') boardId: string) {
+    return this.boardAi.knowledgeGraph(userId, boardId);
+  }
+
+  @Post('research')
+  @RequirePermissions(Permission.CONTENT_EDIT, Permission.AI_USE)
+  research(@CurrentUser('id') userId: string, @Param('boardId') boardId: string) {
+    return this.boardAi.research(userId, boardId);
   }
 }
