@@ -117,6 +117,15 @@ export class MockProvider implements AiProvider {
         ],
       });
     }
+    if (system.includes('emitting operations') || system.includes('operations')) {
+      // Board command agent: add a sticky note echoing the instruction.
+      const last = messages.filter((m) => m.role === 'user').at(-1)?.content ?? '';
+      const instruction = last.split('Instruction:').pop()?.trim().slice(0, 120) || 'Mock note';
+      return JSON.stringify({
+        reply: `Added a note for: ${instruction}`,
+        operations: [{ op: 'add_note', text: instruction }],
+      });
+    }
     return JSON.stringify({ result: 'mock' });
   }
 

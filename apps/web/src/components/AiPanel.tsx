@@ -1,13 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import type { BoardEdge, BoardObjectBase } from '@ai-board/shared';
+import type { AppliedBoardOp, BoardEdge, BoardObjectBase } from '@ai-board/shared';
 import { api, ApiError } from '@/lib/api';
 import { Button, Input, Spinner } from './ui';
 
 interface Fragment {
   objects: BoardObjectBase[];
   edges: BoardEdge[];
+}
+interface CommandResult {
+  reply: string;
+  operations: AppliedBoardOp[];
 }
 interface Task {
   title: string;
@@ -21,7 +25,7 @@ interface AgentResult {
   data?: unknown;
 }
 
-type Tab = 'create' | 'agents' | 'analyze' | 'chat';
+type Tab = 'agent' | 'create' | 'agents' | 'analyze' | 'chat';
 
 const AGENTS: { kind: string; label: string }[] = [
   { kind: 'product_manager', label: 'Product Manager' },
@@ -33,15 +37,21 @@ const AGENTS: { kind: string; label: string }[] = [
 export function AiPanel({
   boardId,
   onFragment,
+  onOps,
 }: {
   boardId: string;
   onFragment: (objects: BoardObjectBase[], edges: BoardEdge[]) => void;
+  onOps: (operations: AppliedBoardOp[]) => void;
 }) {
   const [open, setOpen] = useState(true);
-  const [tab, setTab] = useState<Tab>('create');
+  const [tab, setTab] = useState<Tab>('agent');
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [command, setCommand] = useState('');
+  const [agentLog, setAgentLog] = useState<
+    { role: 'user' | 'assistant'; content: string }[]
+  >([]);
   const [prompt, setPrompt] = useState('');
   const [agentPrompt, setAgentPrompt] = useState('');
   const [agentText, setAgentText] = useState<string | null>(null);
@@ -65,6 +75,28 @@ export function AiPanel({
   }
 
   const place = (f?: Fragment) => f && onFragment(f.objects, f.edges);
+
+  async function sendCommand() {
+    if (!command.trim()) return;
+    const instruction = command;
+    setCommand('');
+    setAgentLog((l) => [...l, { role: 'user', content: instruction }]);
+    const history = agentLog.slice(-6);
+    const res = await run('command', () =>
+      api<CommandResult>(`/boards/${boardId}/ai/command`, {
+        method: 'POST',
+        body: { instruction, history },
+      }),
+    );
+    if (res) {
+      onOps(res.operations);
+      const count = res.operations.length;
+      setAgentLog((l) => [
+        ...l,
+        { role: 'assistant', content: `${res.reply}${count ? ` (${count} change${count > 1 ? 's' : ''})` : ''}` },
+      ]);
+    }
+  }
 
   async function generate(kind: 'mindmap' | 'diagram') {
     if (!prompt.trim()) return;
@@ -159,7 +191,7 @@ export function AiPanel({
       </div>
 
       <div className="flex border-b border-slate-200 text-xs dark:border-slate-800">
-        {(['create', 'agents', 'analyze', 'chat'] as Tab[]).map((t) => (
+        {(['agent', 'create', 'agents', 'analyze', 'chat'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -174,6 +206,31 @@ export function AiPanel({
 
       <div className="flex-1 space-y-3 overflow-y-auto p-3 text-sm">
         {error && <p className="rounded bg-red-50 p-2 text-red-600 dark:bg-red-950">{error}</p>}
+
+        {tab === 'agent' && (
+          <div className="space-y-2">
+            {agentLog.length === 0 && (
+              <p className="text-slate-400">
+                Tell the assistant what to change — e.g. “add three sticky notes about
+                onboarding”, “connect Login to Database”, “delete the empty notes”, or
+                “rename the central node to Q3 Goals”. It edits the board for you.
+              </p>
+            )}
+            {agentLog.map((m, i) => (
+              <div
+                key={i}
+                className={`rounded p-2 text-xs ${
+                  m.role === 'user'
+                    ? 'bg-indigo-50 dark:bg-indigo-950'
+                    : 'bg-slate-50 dark:bg-slate-800'
+                }`}
+              >
+                <span className="whitespace-pre-wrap">{m.content}</span>
+              </div>
+            ))}
+            {busy === 'command' && <Spinner className="text-indigo-600" />}
+          </div>
+        )}
 
         {tab === 'create' && (
           <>
@@ -284,6 +341,25 @@ export function AiPanel({
           </div>
         )}
       </div>
+
+      {tab === 'agent' && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void sendCommand();
+          }}
+          className="flex gap-2 border-t border-slate-200 p-2 dark:border-slate-800"
+        >
+          <Input
+            placeholder="Tell the assistant what to change…"
+            value={command}
+            onChange={(e) => setCommand(e.target.value)}
+          />
+          <Button type="submit" disabled={!!busy}>
+            {busy === 'command' ? <Spinner /> : 'Run'}
+          </Button>
+        </form>
+      )}
 
       {tab === 'chat' && (
         <form

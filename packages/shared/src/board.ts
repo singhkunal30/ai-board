@@ -84,3 +84,27 @@ export interface PresenceState {
   selection?: string[];
   lastActiveAt: number;
 }
+
+/**
+ * Concrete, already-resolved board mutations produced by the AI command agent.
+ * The server applies these to the persisted snapshot and returns them so the
+ * client can apply the identical changes to the live (Yjs) document.
+ */
+export type AppliedBoardOp =
+  | { kind: 'add'; object: BoardObjectBase }
+  | {
+      kind: 'update';
+      id: string;
+      data?: Record<string, unknown>;
+      style?: Record<string, unknown>;
+      position?: Point;
+    }
+  | { kind: 'delete'; ids: string[] }
+  | { kind: 'connect'; edge: BoardEdge };
+
+export interface BoardCommandResult {
+  /** Natural-language summary of what the agent did. */
+  reply: string;
+  operations: AppliedBoardOp[];
+}
+

@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
+  AppliedBoardOp,
+  BoardCommandResult,
   BoardSnapshot,
   ChatMessage,
   EmbeddingSourceType,
@@ -9,6 +11,7 @@ import { BoardsService } from '../../boards/boards.service';
 import { AiService } from '../ai.service';
 import { EmbeddingService, SearchHit } from '../rag/embedding.service';
 import { boardTextUnits, renderBoardForPrompt } from '../rag/board-content';
+import { applyCommand, commandResponseSchema } from './command.util';
 import {
   DiagramSpec,
   GeneratedFragment,
@@ -21,6 +24,7 @@ import {
 } from './layout.util';
 import {
   BOARD_CHAT_SYSTEM,
+  BOARD_COMMAND_SYSTEM,
   CLUSTER_SYSTEM,
   DIAGRAM_SYSTEM,
   KNOWLEDGE_GRAPH_SYSTEM,
@@ -290,4 +294,69 @@ export class BoardAiService {
     const result = await this.ai.chat(messages);
     return { answer: result.content, sources: hits };
   }
+
+  /**
+   * Board command agent: turns a natural-language instruction into concrete
+   * board mutations, applies them to the persisted snapshot, and returns the
+   * resolved operations so the client can replay them onto the live document.
+   */
+  async command(
+    actorId: string,
+    boardId: string,
+    instruction: string,
+    history: ChatMessage[] = [],
+  ): Promise<BoardCommandResult> {
+    const { snapshot } = await this.snapshotOf(boardId);
+
+    // Show the model the current items it is allowed to reference by id.
+    const inventory = boardTextUnits(snapshot)
+      .map((u) => `- id=${u.objectId} :: ${u.content}`)
+      .join('\n');
+
+    const raw = await this.ai.chatJson<unknown>([
+      { role: 'system', content: BOARD_COMMAND_SYSTEM },
+      ...history.slice(-6),
+      {
+        role: 'user',
+        content: `Current board items (${snapshot.objects.length}):\n${
+          inventory || '(empty board)'
+        }\n\nInstruction: ${instruction}`,
+      },
+    ]);
+
+    const parsed = commandResponseSchema.safeParse(raw);
+    if (!parsed.success) {
+      return { reply: "I couldn't turn that into board changes — try rephrasing.", operations: [] };
+    }
+
+    const { snapshot: updated, operations } = applyCommand(
+      snapshot,
+      parsed.data,
+      this.placementOrigin(snapshot),
+    );
+
+    if (operations.length > 0) {
+      await this.boards.saveSnapshot(actorId, boardId, updated as never);
+    }
+
+    const reply =
+      parsed.data.reply?.trim() ||
+      (operations.length > 0
+        ? `Applied ${operations.length} change${operations.length > 1 ? 's' : ''}.`
+        : 'No changes were needed.');
+
+    return { reply, operations: dedupeDeletes(operations) };
+  }
+}
+
+/** Collapses consecutive single-id delete ops into one for a tidier payload. */
+function dedupeDeletes(ops: AppliedBoardOp[]): AppliedBoardOp[] {
+  const out: AppliedBoardOp[] = [];
+  const deletedIds: string[] = [];
+  for (const op of ops) {
+    if (op.kind === 'delete') deletedIds.push(...op.ids);
+    else out.push(op);
+  }
+  if (deletedIds.length) out.push({ kind: 'delete', ids: deletedIds });
+  return out;
 }

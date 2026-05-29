@@ -7,6 +7,8 @@ import { BoardAiService } from './board-ai.service';
 import {
   BoardChatInput,
   boardChatSchema,
+  CommandInput,
+  commandSchema,
   GeneratePromptInput,
   generatePromptSchema,
   MeetingInput,
@@ -92,5 +94,16 @@ export class BoardAiController {
   @RequirePermissions(Permission.CONTENT_EDIT, Permission.AI_USE)
   research(@CurrentUser('id') userId: string, @Param('boardId') boardId: string) {
     return this.boardAi.research(userId, boardId);
+  }
+
+  /** Natural-language board control: the agent edits the canvas for you. */
+  @Post('command')
+  @RequirePermissions(Permission.CONTENT_EDIT, Permission.AI_USE)
+  command(
+    @CurrentUser('id') userId: string,
+    @Param('boardId') boardId: string,
+    @Body(new ZodValidationPipe(commandSchema)) dto: CommandInput,
+  ) {
+    return this.boardAi.command(userId, boardId, dto.instruction, dto.history);
   }
 }

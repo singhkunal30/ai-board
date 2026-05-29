@@ -20,6 +20,11 @@ export interface BoardSync {
   addEdge: (edge: BoardEdge) => void;
   updateObjectPosition: (id: string, position: { x: number; y: number }) => void;
   updateObjectData: (id: string, data: Record<string, unknown>) => void;
+  /** Merge any of data/style/position into an object in one transaction. */
+  patchObject: (
+    id: string,
+    patch: { data?: Record<string, unknown>; style?: Record<string, unknown>; position?: { x: number; y: number } },
+  ) => void;
   removeObjects: (ids: string[]) => void;
   setCursor: (point: { x: number; y: number } | null) => void;
 }
@@ -147,6 +152,24 @@ export function useBoardSync(boardId: string): BoardSync {
     [tx],
   );
 
+  const patchObject = useCallback(
+    (
+      id: string,
+      patch: { data?: Record<string, unknown>; style?: Record<string, unknown>; position?: { x: number; y: number } },
+    ) =>
+      tx(() => {
+        const obj = maps.current?.objects.get(id);
+        if (!obj) return;
+        maps.current?.objects.set(id, {
+          ...obj,
+          ...(patch.position ? { position: patch.position } : {}),
+          ...(patch.data ? { data: { ...obj.data, ...patch.data } } : {}),
+          ...(patch.style ? { style: { ...obj.style, ...patch.style } } : {}),
+        });
+      }),
+    [tx],
+  );
+
   const removeObjects = useCallback(
     (ids: string[]) =>
       tx(() => {
@@ -182,6 +205,7 @@ export function useBoardSync(boardId: string): BoardSync {
       addEdge,
       updateObjectPosition,
       updateObjectData,
+      patchObject,
       removeObjects,
       setCursor,
     }),
@@ -195,6 +219,7 @@ export function useBoardSync(boardId: string): BoardSync {
       addEdge,
       updateObjectPosition,
       updateObjectData,
+      patchObject,
       removeObjects,
       setCursor,
     ],

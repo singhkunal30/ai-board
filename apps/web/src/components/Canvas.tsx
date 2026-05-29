@@ -16,7 +16,11 @@ import {
   type NodeChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { BoardObjectType, type BoardObjectBase } from '@ai-board/shared';
+import {
+  BoardObjectType,
+  type AppliedBoardOp,
+  type BoardObjectBase,
+} from '@ai-board/shared';
 import { api } from '@/lib/api';
 import { useBoardSync } from '@/lib/use-board-sync';
 import { BoardNode, type BoardNodeData } from './nodes/BoardNode';
@@ -168,6 +172,29 @@ function CanvasInner({ boardId }: { boardId: string }) {
     [screenToFlowPosition, sync],
   );
 
+  // Apply the AI command agent's operations to the live document.
+  const applyOps = useCallback(
+    (ops: AppliedBoardOp[]) => {
+      for (const op of ops) {
+        switch (op.kind) {
+          case 'add':
+            sync.addObject(op.object);
+            break;
+          case 'update':
+            sync.patchObject(op.id, { data: op.data, style: op.style, position: op.position });
+            break;
+          case 'delete':
+            sync.removeObjects(op.ids);
+            break;
+          case 'connect':
+            sync.addEdge(op.edge);
+            break;
+        }
+      }
+    },
+    [sync],
+  );
+
   return (
     <div className="relative h-full w-full">
       {/* Toolbar */}
@@ -220,7 +247,11 @@ function CanvasInner({ boardId }: { boardId: string }) {
         <RemoteCursors sync={sync} />
       </ReactFlow>
 
-      <AiPanel boardId={boardId} onFragment={(o, e) => sync.addFragment(o, e)} />
+      <AiPanel
+        boardId={boardId}
+        onFragment={(o, e) => sync.addFragment(o, e)}
+        onOps={applyOps}
+      />
     </div>
   );
 }
