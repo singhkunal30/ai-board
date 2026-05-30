@@ -1,3 +1,7 @@
 packages:
-  - "apps/*"
+  # apps/mobile is a standalone Expo (React Native) project with its own npm
+  # install, intentionally excluded from the pnpm workspace so it builds with
+  # standard Android tooling.
+  - "apps/api"
+  - "apps/web"
   - "packages/*"

@@ -125,6 +125,14 @@ refuses to start if misconfigured). See [.env.example](.env.example) for the
 full, documented list. To switch AI runtimes, change `AI_PROVIDER` and
 `AI_BASE_URL` — no code changes required.
 
+## Mobile app (Android)
+
+A native React Native (Expo) app lives in `apps/mobile` — auth, workspaces,
+boards, and the AI command agent, talking to the same API. Build an installable
+APK with no local Android setup via the **Mobile APK** GitHub Actions workflow
+(downloads as an artifact), or locally with `npm run android`. See
+[docs/mobile.md](docs/mobile.md).
+
 ## License
 
 Internal use.
