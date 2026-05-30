@@ -4,10 +4,9 @@ A native React Native (Expo) app — **not** a WebView wrapper. It talks to the
 same AI-Board API as the web client and shares the auth, board, and AI command
 contracts.
 
-> Status: **first native slice.** Auth, workspaces, boards, a board screen
-> (view/add/delete items) and the **AI command agent** (edit the board from
-> natural language) are implemented. The native spatial canvas with live Yjs
-> collaboration is the next slice.
+> Status: auth, workspaces, boards, a **native spatial canvas** (pan/zoom,
+> draggable notes) with **live Yjs collaboration**, an edit sheet, and the
+> **AI command agent** (edit the board from natural language) are implemented.
 
 Lives in `apps/mobile` as a standalone Expo project (its own `npm install`,
 intentionally outside the pnpm workspace so it builds with standard Android
@@ -68,14 +67,19 @@ interfaces (`API_HOST=0.0.0.0`, already the default) and ensure
 - **Auth**: login/register, persisted session (AsyncStorage), silent token
   refresh on 401.
 - **Workspaces / Boards**: list and create.
-- **Board screen**: view objects as cards, add/delete notes (persisted to the
-  board snapshot), and an **AI agent command bar** — type "add three notes
-  about pricing", "connect Login to Database", etc. and the board updates.
+- **Board canvas**: a native infinite canvas (`react-native-gesture-handler` +
+  `reanimated`) — one-finger pan, two-finger pinch-zoom, individually draggable
+  notes, tap-to-edit/delete sheet, and "+ Note".
+- **Live collaboration**: connects to the Yjs realtime channel (Hocuspocus)
+  with the JWT; edits sync across devices and show a live/peer indicator.
+- **AI agent command bar**: type "add three notes about pricing", "connect
+  Login to Database", etc.; the returned operations are applied to the live
+  document, so collaborators see them too.
 - **Settings**: change the backend URL at runtime.
 
-## Next slice
+## Next
 
-- Native spatial canvas (pan/zoom, draggable notes) via
-  `react-native-gesture-handler` + `reanimated`.
-- Live multi-user collaboration through the Yjs realtime channel (already used
-  by the web client).
+- Render connectors/edges on the canvas (data already synced).
+- Presence cursors and richer object types (matching the web client).
+- On-device tuning of the gesture canvas (built and type-checked here, but the
+  gesture/reanimated interactions are best refined on a real device).
