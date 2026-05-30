@@ -44,6 +44,37 @@ npx expo prebuild --platform android --no-install
 # → android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
+## Running on iPhone / iOS
+
+iOS apps can't be sideloaded from an `.ipa` the way Android takes an `.apk`
+(Apple requires signing). The fast path needs **no build and no Apple account**:
+
+### Expo Go (recommended for testing)
+
+1. On the machine with the repo: `cd apps/mobile && npm install && npx expo start`
+2. Install **Expo Go** from the App Store on the iPhone.
+3. Scan the terminal QR code with the iPhone camera → the app opens in Expo Go.
+   (Phone + computer on the same Wi‑Fi; if it won't connect, `npx expo start --tunnel`.)
+4. In the app: **Settings → Backend URL** → `http://<your-computer-LAN-IP>:4000`.
+
+All native modules used here ship with Expo Go, so the canvas, realtime and AI
+agent all work.
+
+### A real installable iOS app (EAS Build)
+
+Needs an Apple Developer account (a free Apple ID works for a 7‑day development
+build registered to your device; TestFlight/App Store needs the paid program):
+
+```bash
+npm i -g eas-cli && eas login
+cd apps/mobile
+eas build --profile preview --platform ios       # ad‑hoc / internal
+eas build --profile development --platform ios    # dev build for your device
+```
+
+iOS App Transport Security is pre-configured (`NSAllowsLocalNetworking`) so the
+app can reach an `http://` backend on your LAN; production should use `https://`.
+
 ## Pointing the app at your backend
 
 The app needs to reach the AI-Board API/web server:

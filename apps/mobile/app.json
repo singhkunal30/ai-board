@@ -11,12 +11,23 @@
       "backgroundColor": "#0b0f1a"
     },
     "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "bundleIdentifier": "com.aiboard.app",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "AI-Board connects to your team's AI-Board server on your local network.",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      }
+    },
     "android": {
       "package": "com.aiboard.app",
       "adaptiveIcon": {
         "backgroundColor": "#4f46e5"
       },
-      "permissions": ["INTERNET"]
+      "permissions": ["INTERNET"],
+      "usesCleartextTraffic": true
     },
     "extra": {
       "defaultApiUrl": "http://10.0.2.2:4000"

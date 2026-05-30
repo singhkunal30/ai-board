@@ -6,7 +6,8 @@
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
-    "prebuild": "expo prebuild --platform android --no-install",
+    "ios": "expo run:ios",
+    "prebuild": "expo prebuild --no-install",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
