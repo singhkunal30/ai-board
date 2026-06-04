@@ -67,6 +67,7 @@ model User {
 
   sessions         Session[]
   identities       OAuthIdentity[]
+  apiKeys          ApiKey[]
   memberships      WorkspaceMember[]
   boardMemberships BoardMember[]
   ownedWorkspaces  Workspace[]       @relation("WorkspaceOwner")
@@ -109,6 +110,26 @@ model OAuthIdentity {
   @@unique([provider, providerUserId])
   @@index([userId])
   @@map("oauth_identities")
+}
+
+/// Personal access tokens for non-interactive clients (the MCP server, CI,
+/// integrations). The plaintext key is shown once at creation; only an argon2
+/// hash of the secret is stored. The indexed `prefix` narrows the lookup before
+/// the hash comparison.
+model ApiKey {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @db.Uuid
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  prefix     String    @unique
+  keyHash    String
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@map("api_keys")
 }
 
 model Workspace {

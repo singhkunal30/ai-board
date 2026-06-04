@@ -6,6 +6,8 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { TokenService } from './token.service';
+import { ApiKeysController } from './api-keys/api-keys.controller';
+import { ApiKeysService } from './api-keys/api-keys.service';
 
 @Module({
   imports: [
@@ -15,8 +17,8 @@ import { TokenService } from './token.service';
     // and refresh tokens can use independent signing keys.
     JwtModule.register({}),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, TokenService, JwtStrategy],
-  exports: [AuthService, TokenService],
+  controllers: [AuthController, ApiKeysController],
+  providers: [AuthService, TokenService, JwtStrategy, ApiKeysService],
+  exports: [AuthService, TokenService, ApiKeysService],
 })
 export class AuthModule {}

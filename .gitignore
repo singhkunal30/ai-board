@@ -16,6 +16,8 @@ out/
 .env
 .env.*
 !.env.example
+# MCP project config may hold an API key
+.mcp.json
 
 # Logs
 logs/

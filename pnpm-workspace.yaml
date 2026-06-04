@@ -4,4 +4,5 @@ packages:
   # standard Android tooling.
   - "apps/api"
   - "apps/web"
+  - "apps/mcp"
   - "packages/*"

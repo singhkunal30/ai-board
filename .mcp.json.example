@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ai-board": {
+      "command": "node",
+      "args": ["apps/mcp/dist/index.js"],
+      "env": {
+        "AI_BOARD_URL": "http://localhost:4000",
+        "AI_BOARD_API_KEY": "aib_REPLACE_WITH_YOUR_KEY"
+      }
+    }
+  }
+}

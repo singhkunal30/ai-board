@@ -64,6 +64,9 @@ jobs:
       - name: Type-check & build web
         run: pnpm --filter @ai-board/web typecheck && pnpm --filter @ai-board/web build
 
+      - name: Build MCP server
+        run: pnpm --filter @ai-board/mcp build
+
       - name: Apply migrations
         run: pnpm --filter @ai-board/api prisma:deploy
 

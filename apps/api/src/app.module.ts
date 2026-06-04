@@ -9,7 +9,7 @@ import { AuditModule } from './audit/audit.module';
 import { AuthzModule } from './authz/authz.module';
 import { PermissionsGuard } from './authz/permissions.guard';
 import { AuthModule } from './auth/auth.module';
-import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { CombinedAuthGuard } from './auth/combined-auth.guard';
 import { UsersModule } from './users/users.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 import { BoardsModule } from './boards/boards.module';
@@ -64,7 +64,7 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: CombinedAuthGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
     { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
