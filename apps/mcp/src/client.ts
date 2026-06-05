@@ -79,6 +79,12 @@ export class AiBoardClient {
       { message },
     );
   }
+  vision(boardId: string, imageBase64: string, prompt?: string) {
+    return this.request<{ analysis: string }>(`/boards/${boardId}/ai/vision`, 'POST', {
+      imageBase64,
+      ...(prompt ? { prompt } : {}),
+    });
+  }
 }
 
 export function objectText(o: BoardObject): string {

@@ -138,6 +138,28 @@ export function AiPanel({
     }
   }
 
+  async function onVisionFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+    const res = await run('vision', () =>
+      api<{ analysis: string; fragment: Fragment }>(`/boards/${boardId}/ai/vision`, {
+        method: 'POST',
+        body: { imageBase64: dataUrl },
+      }),
+    );
+    if (res) {
+      place(res.fragment);
+      setSummary(res.analysis);
+    }
+  }
+
   async function processMeeting() {
     if (meetingNotes.trim().length < 10) return;
     const res = await run('meeting', () =>
@@ -297,14 +319,21 @@ export function AiPanel({
 
         {tab === 'analyze' && (
           <>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button onClick={summarize} disabled={!!busy}>
                 {busy === 'summary' ? <Spinner /> : 'Summarize'}
               </Button>
               <Button variant="ghost" onClick={extractTasks} disabled={!!busy}>
                 {busy === 'tasks' ? <Spinner /> : 'Extract tasks'}
               </Button>
+              <label className="inline-flex cursor-pointer items-center rounded-md border border-slate-300 px-3 py-2 text-sm font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">
+                {busy === 'vision' ? <Spinner /> : '🖼 Analyze image'}
+                <input type="file" accept="image/*" className="hidden" onChange={onVisionFile} disabled={!!busy} />
+              </label>
             </div>
+            <p className="text-xs text-slate-400">
+              Image analysis needs a vision-capable local model (e.g. llava, qwen2-vl).
+            </p>
             {summary && (
               <div className="whitespace-pre-wrap rounded bg-slate-50 p-2 text-xs dark:bg-slate-800">
                 {summary}

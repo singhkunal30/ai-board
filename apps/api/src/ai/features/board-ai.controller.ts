@@ -13,6 +13,8 @@ import {
   generatePromptSchema,
   MeetingInput,
   meetingSchema,
+  VisionInput,
+  visionSchema,
 } from './board-ai.schemas';
 
 /** Board-scoped AI features. Mutating features need CONTENT_EDIT; read-only need AI_USE. */
@@ -94,6 +96,17 @@ export class BoardAiController {
   @RequirePermissions(Permission.CONTENT_EDIT, Permission.AI_USE)
   research(@CurrentUser('id') userId: string, @Param('boardId') boardId: string) {
     return this.boardAi.research(userId, boardId);
+  }
+
+  /** Multimodal: analyze an image and place the analysis on the board. */
+  @Post('vision')
+  @RequirePermissions(Permission.CONTENT_EDIT, Permission.AI_USE)
+  vision(
+    @CurrentUser('id') userId: string,
+    @Param('boardId') boardId: string,
+    @Body(new ZodValidationPipe(visionSchema)) dto: VisionInput,
+  ) {
+    return this.boardAi.vision(userId, boardId, dto.imageBase64, dto.prompt);
   }
 
   /** Natural-language board control: the agent edits the canvas for you. */

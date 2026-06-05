@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import {
   AppliedBoardOp,
@@ -293,6 +294,43 @@ export class BoardAiService {
     ];
     const result = await this.ai.chat(messages);
     return { answer: result.content, sources: hits };
+  }
+
+  /**
+   * Multimodal: analyzes an image with a vision-capable local model and places
+   * the analysis as a note on the board. Accepts raw base64 or a data URL.
+   */
+  async vision(
+    actorId: string,
+    boardId: string,
+    imageBase64: string,
+    prompt?: string,
+  ): Promise<{ analysis: string; fragment: GeneratedFragment }> {
+    const { snapshot } = await this.snapshotOf(boardId);
+    const image = imageBase64.replace(/^data:image\/[a-zA-Z+]+;base64,/, '');
+    const result = await this.ai.chat([
+      {
+        role: 'user',
+        content:
+          prompt?.trim() ||
+          'Describe this image and extract its key elements as concise bullet points.',
+        images: [image],
+      },
+    ]);
+
+    const origin = this.placementOrigin(snapshot);
+    const note: GeneratedFragment['objects'][number] = {
+      id: randomUUID(),
+      type: 'sticky_note',
+      position: origin,
+      size: { width: 260, height: 260 },
+      zIndex: 0,
+      data: { text: result.content },
+      style: { fill: '#bae6fd' },
+    };
+    const fragment: GeneratedFragment = { objects: [note], edges: [] };
+    await this.appendFragment(actorId, boardId, snapshot, fragment);
+    return { analysis: result.content, fragment };
   }
 
   /**

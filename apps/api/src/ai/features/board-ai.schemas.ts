@@ -29,6 +29,12 @@ export const agentSchema = z.object({
 });
 export type AgentInput = z.infer<typeof agentSchema>;
 
+export const visionSchema = z.object({
+  imageBase64: z.string().min(10).max(20_000_000),
+  prompt: z.string().trim().max(2000).optional(),
+});
+export type VisionInput = z.infer<typeof visionSchema>;
+
 export const commandSchema = z.object({
   instruction: z.string().trim().min(1).max(4000),
   history: z

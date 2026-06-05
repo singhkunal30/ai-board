@@ -149,6 +149,16 @@ server.registerTool(
     }),
 );
 
+server.registerTool(
+  'analyze_image',
+  {
+    description: 'Analyze a base64-encoded image with a vision model and add the analysis to the board.',
+    inputSchema: { boardId: z.string(), imageBase64: z.string(), prompt: z.string().optional() },
+  },
+  ({ boardId, imageBase64, prompt }) =>
+    guard(async () => text((await client.vision(boardId, imageBase64, prompt)).analysis)),
+);
+
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
