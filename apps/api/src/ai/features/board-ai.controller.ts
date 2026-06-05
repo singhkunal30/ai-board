@@ -42,6 +42,16 @@ export class BoardAiController {
     return this.boardAi.generateDiagram(userId, boardId, dto.prompt);
   }
 
+  @Post('design')
+  @RequirePermissions(Permission.CONTENT_EDIT, Permission.AI_USE)
+  design(
+    @CurrentUser('id') userId: string,
+    @Param('boardId') boardId: string,
+    @Body(new ZodValidationPipe(generatePromptSchema)) dto: GeneratePromptInput,
+  ) {
+    return this.boardAi.generateDesign(userId, boardId, dto.prompt);
+  }
+
   @Post('cluster')
   @RequirePermissions(Permission.CONTENT_EDIT, Permission.AI_USE)
   cluster(@CurrentUser('id') userId: string, @Param('boardId') boardId: string) {

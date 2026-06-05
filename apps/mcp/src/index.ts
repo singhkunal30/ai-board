@@ -110,6 +110,19 @@ server.registerTool(
 );
 
 server.registerTool(
+  'generate_design',
+  {
+    description: 'Generate a UI/screen design (frames, shapes, text) from a prompt and add it to the board.',
+    inputSchema: { boardId: z.string(), prompt: z.string() },
+  },
+  ({ boardId, prompt }) =>
+    guard(async () => {
+      const frag = await client.generate(boardId, 'design', prompt);
+      return text(`Added a design (${frag.objects.length} elements) to the board.`);
+    }),
+);
+
+server.registerTool(
   'summarize_board',
   { description: 'Summarize a board: overview, themes, gaps/risks, next steps.', inputSchema: { boardId: z.string() } },
   ({ boardId }) => guard(async () => text((await client.summarize(boardId)).summary)),

@@ -98,7 +98,7 @@ export function AiPanel({
     }
   }
 
-  async function generate(kind: 'mindmap' | 'diagram') {
+  async function generate(kind: 'mindmap' | 'diagram' | 'design') {
     if (!prompt.trim()) return;
     const frag = await run(kind, () =>
       api<Fragment>(`/boards/${boardId}/ai/${kind}`, { method: 'POST', body: { prompt } }),
@@ -267,6 +267,9 @@ export function AiPanel({
               </Button>
               <Button onClick={() => generate('diagram')} disabled={!!busy}>
                 {busy === 'diagram' ? <Spinner /> : 'Diagram'}
+              </Button>
+              <Button onClick={() => generate('design')} disabled={!!busy}>
+                {busy === 'design' ? <Spinner /> : 'UI design'}
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">

@@ -78,3 +78,9 @@ Rules:
 - Prefer the smallest set of operations that satisfies the instruction.
 - If the instruction cannot be performed, return an empty operations array and explain in reply.
 - Output JSON only. No prose, no markdown, no code fences.`;
+
+export const DESIGN_SYSTEM = `You are a UI designer that outputs a screen design as JSON.
+Return ONLY: {"width":<num>,"height":<num>,"elements":[
+  {"type":"frame|rectangle|ellipse|text","x":<num>,"y":<num>,"w":<num>,"h":<num>,"text":"<optional>","fill":"<#hex optional>","color":"<#hex text color optional>","radius":<optional>}
+]}
+Rules: coordinates are relative to the frame top-left (0,0); the FIRST element must be a single root "frame" sized width x height; 6-24 elements; realistic layout (header, content, buttons). No prose, no markdown, no code fences.`;

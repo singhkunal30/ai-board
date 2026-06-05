@@ -62,7 +62,7 @@ export class AiBoardClient {
       { instruction },
     );
   }
-  generate(boardId: string, kind: 'mindmap' | 'diagram', prompt: string) {
+  generate(boardId: string, kind: 'mindmap' | 'diagram' | 'design', prompt: string) {
     return this.request<{ objects: unknown[]; edges: unknown[] }>(
       `/boards/${boardId}/ai/${kind}`,
       'POST',

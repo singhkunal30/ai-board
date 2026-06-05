@@ -27,6 +27,7 @@ import {
   BOARD_CHAT_SYSTEM,
   BOARD_COMMAND_SYSTEM,
   CLUSTER_SYSTEM,
+  DESIGN_SYSTEM,
   DIAGRAM_SYSTEM,
   KNOWLEDGE_GRAPH_SYSTEM,
   MEETING_SYSTEM,
@@ -187,6 +188,53 @@ export class BoardAiService {
       { role: 'user', content: prompt },
     ]);
     const fragment = layoutMindMap(map, this.placementOrigin(snapshot));
+    return this.appendFragment(actorId, boardId, snapshot, fragment);
+  }
+
+  /** Generates a UI/screen design (frames, shapes, text) and adds it to the board. */
+  async generateDesign(actorId: string, boardId: string, prompt: string): Promise<GeneratedFragment> {
+    const { snapshot } = await this.snapshotOf(boardId);
+    const spec = await this.ai.chatJson<{
+      elements?: Array<{
+        type: string;
+        x: number;
+        y: number;
+        w: number;
+        h: number;
+        text?: string;
+        fill?: string;
+        color?: string;
+        radius?: number;
+      }>;
+    }>([
+      { role: 'system', content: DESIGN_SYSTEM },
+      { role: 'user', content: prompt },
+    ]);
+
+    const origin = this.placementOrigin(snapshot);
+    const elements = Array.isArray(spec.elements) ? spec.elements : [];
+    const objects: GeneratedFragment['objects'] = elements.slice(0, 50).map((el, i) => {
+      const isFrame = el.type === 'frame';
+      const isText = el.type === 'text';
+      const isEllipse = el.type === 'ellipse';
+      const type = isFrame ? 'frame' : isText ? 'text' : 'shape';
+      return {
+        id: randomUUID(),
+        type,
+        position: { x: origin.x + Math.round(el.x), y: origin.y + Math.round(el.y) },
+        size: { width: Math.max(8, Math.round(el.w)), height: Math.max(8, Math.round(el.h)) },
+        zIndex: isFrame ? -1 : i,
+        data: el.text ? { text: el.text } : {},
+        style: {
+          ...(isEllipse ? { shape: 'ellipse' } : type === 'shape' ? { shape: 'rectangle' } : {}),
+          ...(el.fill ? { fill: el.fill } : {}),
+          ...(el.color ? { color: el.color } : {}),
+          ...(el.radius != null ? { radius: el.radius } : {}),
+          ...(isFrame ? { stroke: '#cbd5e1', strokeWidth: 1 } : {}),
+        },
+      };
+    });
+    const fragment: GeneratedFragment = { objects, edges: [] };
     return this.appendFragment(actorId, boardId, snapshot, fragment);
   }
 

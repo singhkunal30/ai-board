@@ -117,6 +117,19 @@ export class MockProvider implements AiProvider {
         ],
       });
     }
+    if (system.includes('ui designer')) {
+      return JSON.stringify({
+        width: 390,
+        height: 600,
+        elements: [
+          { type: 'frame', x: 0, y: 0, w: 390, h: 600, fill: '#ffffff' },
+          { type: 'rectangle', x: 0, y: 0, w: 390, h: 64, text: 'Header', fill: '#4f46e5', color: '#ffffff' },
+          { type: 'rectangle', x: 24, y: 120, w: 342, h: 44, text: 'Email', fill: '#f1f5f9', radius: 8 },
+          { type: 'rectangle', x: 24, y: 180, w: 342, h: 44, text: 'Password', fill: '#f1f5f9', radius: 8 },
+          { type: 'rectangle', x: 24, y: 248, w: 342, h: 48, text: 'Sign in', fill: '#4f46e5', color: '#ffffff', radius: 8 },
+        ],
+      });
+    }
     if (system.includes('emitting operations') || system.includes('operations')) {
       // Board command agent: add a sticky note echoing the instruction.
       const last = messages.filter((m) => m.role === 'user').at(-1)?.content ?? '';
