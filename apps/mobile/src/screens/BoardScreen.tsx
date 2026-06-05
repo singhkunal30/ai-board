@@ -139,7 +139,7 @@ export default function BoardScreen({ route }: ScreenProps<'Board'>) {
         </Pressable>
       </View>
 
-      <Canvas objects={sync.objects} onMove={onMove} onPressNote={onPressNote} />
+      <Canvas objects={sync.objects} edges={sync.edges} onMove={onMove} onPressNote={onPressNote} />
 
       {reply && <Text style={styles.reply}>🤖 {reply}</Text>}
       {error && <Text style={styles.error}>{error}</Text>}

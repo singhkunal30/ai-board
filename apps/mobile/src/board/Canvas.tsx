@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Svg, { Line } from 'react-native-svg';
 import { NoteView, WORLD } from './NoteView';
 import { colors } from '../theme';
-import type { BoardObjectBase } from '../types';
+import type { BoardEdge, BoardObjectBase } from '../types';
 
 /**
  * Native infinite-ish canvas: one-finger drag on empty space pans, two-finger
@@ -13,13 +14,16 @@ import type { BoardObjectBase } from '../types';
  */
 export function Canvas({
   objects,
+  edges,
   onMove,
   onPressNote,
 }: {
   objects: BoardObjectBase[];
+  edges: BoardEdge[];
   onMove: (id: string, x: number, y: number) => void;
   onPressNote: (id: string) => void;
 }) {
+  const byId = new Map(objects.map((o) => [o.id, o]));
   const [viewport, setViewport] = useState({ w: 0, h: 0 });
 
   // Pan/zoom transform of the world.
@@ -75,6 +79,26 @@ export function Canvas({
           <GestureDetector gesture={bgPan}>
             <View style={styles.background} />
           </GestureDetector>
+
+          {/* Connectors between linked objects. */}
+          <Svg style={StyleSheet.absoluteFill} width={WORLD} height={WORLD} pointerEvents="none">
+            {edges.map((e) => {
+              const s = byId.get(e.source);
+              const t = byId.get(e.target);
+              if (!s || !t) return null;
+              return (
+                <Line
+                  key={e.id}
+                  x1={s.position.x + WORLD / 2 + s.size.width / 2}
+                  y1={s.position.y + WORLD / 2 + s.size.height / 2}
+                  x2={t.position.x + WORLD / 2 + t.size.width / 2}
+                  y2={t.position.y + WORLD / 2 + t.size.height / 2}
+                  stroke="#64748b"
+                  strokeWidth={2}
+                />
+              );
+            })}
+          </Svg>
 
           {[...objects]
             .sort((a, b) => a.zIndex - b.zIndex)
