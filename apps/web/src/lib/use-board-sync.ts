@@ -20,10 +20,16 @@ export interface BoardSync {
   addEdge: (edge: BoardEdge) => void;
   updateObjectPosition: (id: string, position: { x: number; y: number }) => void;
   updateObjectData: (id: string, data: Record<string, unknown>) => void;
-  /** Merge any of data/style/position into an object in one transaction. */
+  /** Merge any of data/style/position/size into an object in one transaction. */
   patchObject: (
     id: string,
-    patch: { data?: Record<string, unknown>; style?: Record<string, unknown>; position?: { x: number; y: number } },
+    patch: {
+      data?: Record<string, unknown>;
+      style?: Record<string, unknown>;
+      position?: { x: number; y: number };
+      size?: { width: number; height: number };
+      zIndex?: number;
+    },
   ) => void;
   removeObjects: (ids: string[]) => void;
   setCursor: (point: { x: number; y: number } | null) => void;
@@ -155,7 +161,13 @@ export function useBoardSync(boardId: string): BoardSync {
   const patchObject = useCallback(
     (
       id: string,
-      patch: { data?: Record<string, unknown>; style?: Record<string, unknown>; position?: { x: number; y: number } },
+      patch: {
+        data?: Record<string, unknown>;
+        style?: Record<string, unknown>;
+        position?: { x: number; y: number };
+        size?: { width: number; height: number };
+        zIndex?: number;
+      },
     ) =>
       tx(() => {
         const obj = maps.current?.objects.get(id);
@@ -163,6 +175,8 @@ export function useBoardSync(boardId: string): BoardSync {
         maps.current?.objects.set(id, {
           ...obj,
           ...(patch.position ? { position: patch.position } : {}),
+          ...(patch.size ? { size: patch.size } : {}),
+          ...(patch.zIndex != null ? { zIndex: patch.zIndex } : {}),
           ...(patch.data ? { data: { ...obj.data, ...patch.data } } : {}),
           ...(patch.style ? { style: { ...obj.style, ...patch.style } } : {}),
         });
