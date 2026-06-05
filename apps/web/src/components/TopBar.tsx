@@ -29,6 +29,9 @@ export function TopBar({ title, children }: { title?: React.ReactNode; children?
       </div>
       <div className="flex items-center gap-2">
         {children}
+        <Link href="/settings" className="rounded-md border border-slate-300 px-3 py-2 text-sm hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800" title="Settings & API keys">
+          ⚙︎
+        </Link>
         <Button variant="ghost" onClick={toggle} aria-label="Toggle theme">
           {theme === 'light' ? '🌙' : '☀️'}
         </Button>
