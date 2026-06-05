@@ -1,16 +1,25 @@
 # AI-Board
 
-An internal, AI-first collaborative whiteboard platform — a self-hostable
-alternative to Miro/FigJam where the AI runs on **local LLMs** (Ollama, vLLM,
-LM Studio, llama.cpp, or any OpenAI-compatible endpoint) instead of paid cloud
-APIs.
+An internal, AI-first collaborative whiteboard **and design** platform — a
+self-hostable alternative to Miro/FigJam/Figma where the AI runs on **local
+LLMs** (Ollama, vLLM, LM Studio, llama.cpp, or any OpenAI-compatible endpoint)
+instead of paid cloud APIs.
 
-> **Status: foundation / backbone.** This repository currently contains the
-> production-grade backend backbone — monorepo, database, auth + RBAC, realtime
-> CRDT collaboration server, and the local-LLM AI provider abstraction — built
-> as the base for the full product. See [docs/roadmap.md](docs/roadmap.md) for
-> what is implemented now and what comes next. Nothing here is a stub: every
-> endpoint shown below runs and is exercised by tests.
+> Web (Next.js) + API (NestJS/Postgres/pgvector) + native mobile (Expo) +
+> an **MCP server** so Claude Code can drive boards. Highlights: real-time CRDT
+> collaboration, an AI **command agent** that edits the board from natural
+> language, RAG chat over boards & documents, a Figma-style design surface
+> (shapes, frames, inspector, layers, alignment, export), and AI generation of
+> mind maps, diagrams and UI designs. See [docs/roadmap.md](docs/roadmap.md).
+> Nothing here is a stub — the web/API are verified end-to-end and exercised by
+> tests (28 unit + 9 e2e).
+
+## Docs
+
+- [Architecture](docs/architecture.md) · [Database](docs/database.md) ·
+  [Security](docs/security.md) · [AI architecture](docs/ai-architecture.md)
+- [Deployment](docs/deployment.md) · [Mobile (iOS/Android)](docs/mobile.md) ·
+  [MCP server](docs/mcp.md) · [Roadmap](docs/roadmap.md)
 
 ## What works today
 

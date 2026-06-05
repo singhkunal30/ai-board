@@ -57,6 +57,24 @@ and run — not a big-bang. This document tracks what's done and what's next.
 - [ ] OpenTelemetry tracing + Grafana dashboards; k6 load tests
 - [ ] Backups, data residency, field-level encryption for documents
 
+## Phase 5 — Design (Figma-style) ✅ (delivered)
+
+- [x] Design object model (fill, stroke, radius, opacity, rotation, typography,
+      shape) in `object.style` — no schema change
+- [x] Shapes (rectangle/ellipse), frames, rich text rendering + resize
+- [x] Properties inspector, layers panel (z-order/lock/hide), alignment &
+      distribution, snap-to-grid
+- [x] Export PNG / SVG / JSON; design-frame template
+- [x] AI design generation (prompt → screen with frames/shapes/text)
+- [ ] Vector pen/bezier + boolean ops, components/instances + variants,
+      auto-layout, design tokens/shared styles, prototyping links
+
+## Phase 6 — Integrations ✅ (delivered)
+
+- [x] API keys (personal access tokens) + management UI
+- [x] **MCP server** so Claude Code / Desktop can read and edit boards
+- [x] Multimodal/vision (analyze images onto the board)
+
 ## Non-goals (for now)
 
 - Paid cloud LLM providers (local-first by design; a cloud driver could be
