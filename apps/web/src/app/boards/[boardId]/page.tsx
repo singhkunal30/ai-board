@@ -42,7 +42,7 @@ export default function BoardPage() {
           </div>
         ) : (
           <>
-            <BoardCanvas boardId={boardId} />
+            <BoardCanvas boardId={boardId} title={board.title} />
             {showComments && <CommentsPanel boardId={boardId} onClose={() => setShowComments(false)} />}
           </>
         )}

@@ -28,6 +28,7 @@ import { AiPanel } from './AiPanel';
 import { Inspector } from './Inspector';
 import { LayersPanel } from './LayersPanel';
 import { AlignToolbar } from './AlignToolbar';
+import { ExportMenu } from './ExportMenu';
 import { Button } from './ui';
 
 const nodeTypes = { board: BoardNode };
@@ -78,7 +79,7 @@ function RemoteCursors({ sync }: { sync: ReturnType<typeof useBoardSync> }) {
   );
 }
 
-function CanvasInner({ boardId }: { boardId: string }) {
+function CanvasInner({ boardId, title }: { boardId: string; title: string }) {
   const sync = useBoardSync(boardId);
   const { screenToFlowPosition } = useReactFlow();
   const [rfNodes, setRfNodes] = useState<Node[]>([]);
@@ -197,6 +198,8 @@ function CanvasInner({ boardId }: { boardId: string }) {
         <Button variant="ghost" onClick={() => addAt('rectangle')}>▭</Button>
         <Button variant="ghost" onClick={() => addAt('ellipse')}>◯</Button>
         <Button variant="ghost" onClick={() => addAt('frame')}>Frame</Button>
+        <span className="mx-1 w-px self-stretch bg-slate-200 dark:bg-slate-700" />
+        <ExportMenu title={title} objects={sync.objects} edges={sync.edges} />
       </div>
 
       {/* Presence + connection status */}
@@ -240,10 +243,10 @@ function CanvasInner({ boardId }: { boardId: string }) {
   );
 }
 
-export function BoardCanvas({ boardId }: { boardId: string }) {
+export function BoardCanvas({ boardId, title }: { boardId: string; title: string }) {
   return (
     <ReactFlowProvider>
-      <CanvasInner boardId={boardId} />
+      <CanvasInner boardId={boardId} title={title} />
     </ReactFlowProvider>
   );
 }

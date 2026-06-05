@@ -113,6 +113,35 @@ const TEMPLATES: Record<string, Spec> = {
       ]),
   },
 
+  design: {
+    info: {
+      id: 'design',
+      name: 'Design frame',
+      description: 'A blank frame with a heading — start a UI/diagram design.',
+    },
+    build: () =>
+      snapshot([
+        {
+          id: randomUUID(),
+          type: BoardObjectType.FRAME,
+          position: { x: 0, y: 0 },
+          size: { width: 390, height: 600 },
+          zIndex: -1,
+          data: { text: 'Screen' },
+          style: { fill: '#ffffff', stroke: '#cbd5e1', strokeWidth: 1, radius: 12 },
+        },
+        {
+          id: randomUUID(),
+          type: BoardObjectType.SHAPE,
+          position: { x: 24, y: 24 },
+          size: { width: 342, height: 64 },
+          zIndex: 0,
+          data: { text: 'Header' },
+          style: { shape: 'rectangle', fill: '#4f46e5', color: '#ffffff', radius: 8 },
+        },
+      ]),
+  },
+
   journey: {
     info: {
       id: 'journey',
